@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Traefik - Reverse Proxy with Auto SSL
   traefik:
-    image: traefik:v3.0
+    image: traefik:v2.10
     container_name: bestdoctors_traefik
     restart: unless-stopped
     security_opt:
@@ -115,7 +115,7 @@ services:
     networks:
       - bestdoctors-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9002/health"]
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/9002' || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

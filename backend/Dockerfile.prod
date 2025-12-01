@@ -40,10 +40,6 @@ COPY --from=builder --chown=nonroot:nonroot /app/bestdoctors_service .
 # Copy migrations (read-only)
 COPY --from=builder --chown=nonroot:nonroot /app/migrations ./migrations
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["/app/bestdoctors_service", "-health"]
-
 # Expose port
 EXPOSE 9002
 

@@ -27,10 +27,11 @@ certificatesResolvers:
         entryPoint: web
 
 providers:
-  docker:
-    endpoint: "unix:///var/run/docker.sock"
-    exposedByDefault: false
-    network: traefik-public
+  # Temporarily disabled due to Docker API version mismatch
+  # docker:
+  #   endpoint: "unix:///var/run/docker.sock"
+  #   exposedByDefault: false
+  #   network: traefik-public
   file:
     filename: /dynamic.yml
     watch: true

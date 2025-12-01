@@ -22,29 +22,32 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     -ldflags='-w -s -extldflags "-static"' \
     -o bestdoctors_service cmd/main.go
 
-# Final stage - using distroless for minimal attack surface
-FROM gcr.io/distroless/static-debian12:nonroot
+# Final stage - Alpine for debugging (switch back to distroless after fixing)
+FROM alpine:3.19
 
-# Copy timezone data and CA certificates from builder
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# Install ca-certificates and tzdata
+RUN apk add --no-cache ca-certificates tzdata
 
 # Set timezone
 ENV TZ=America/Sao_Paulo
 
 WORKDIR /app
 
+# Create non-root user
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser
+
 # Copy binary from builder
-COPY --from=builder --chown=nonroot:nonroot /app/bestdoctors_service .
+COPY --from=builder --chown=appuser:appuser /app/bestdoctors_service .
 
 # Copy migrations (read-only)
-COPY --from=builder --chown=nonroot:nonroot /app/migrations ./migrations
+COPY --from=builder --chown=appuser:appuser /app/migrations ./migrations
 
 # Expose port
 EXPOSE 9002
 
-# Run as non-root user (distroless nonroot user is uid 65532)
-USER nonroot:nonroot
+# Run as non-root user
+USER appuser:appuser
 
 # Run the application
-ENTRYPOINT ["/app/bestdoctors_service"]
+CMD ["/app/bestdoctors_service"]

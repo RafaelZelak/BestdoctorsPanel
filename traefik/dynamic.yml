@@ -1,4 +1,42 @@
 http:
+  routers:
+    # Frontend router
+    frontend:
+      rule: "Host(`chat.setuptecnologia.com.br`)"
+      entryPoints:
+        - websecure
+      service: frontend-service
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - security-headers
+        - compression
+
+    # Backend API router
+    backend-api:
+      rule: "Host(`chat.setuptecnologia.com.br`) && (PathPrefix(`/bestdoctors/`) || PathPrefix(`/auth/`) || PathPrefix(`/admin/`))"
+      entryPoints:
+        - websecure
+      service: backend-service
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - security-headers
+        - rate-limit
+
+  services:
+    # Frontend service
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://bestdoctors_frontend:80"
+
+    # Backend service
+    backend-service:
+      loadBalancer:
+        servers:
+          - url: "http://bestdoctors_backend:9002"
+
   middlewares:
     security-headers:
       headers:

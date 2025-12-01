@@ -1,0 +1,54 @@
+# Build stage
+FROM golang:1.23-alpine AS builder
+
+# Security: Install ca-certificates and tzdata
+RUN apk add --no-cache ca-certificates tzdata git
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Tidy dependencies
+RUN go mod tidy
+
+# Build with security flags and optimizations
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -a -installsuffix cgo \
+    -ldflags='-w -s -extldflags "-static"' \
+    -o bestdoctors_service cmd/main.go
+
+# Final stage - using distroless for minimal attack surface
+FROM gcr.io/distroless/static-debian12:nonroot
+
+# Copy timezone data and CA certificates from builder
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Set timezone
+ENV TZ=America/Sao_Paulo
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder --chown=nonroot:nonroot /app/bestdoctors_service .
+
+# Copy migrations (read-only)
+COPY --from=builder --chown=nonroot:nonroot /app/migrations ./migrations
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/app/bestdoctors_service", "-health"]
+
+# Expose port
+EXPOSE 9002
+
+# Run as non-root user (distroless nonroot user is uid 65532)
+USER nonroot:nonroot
+
+# Run the application
+ENTRYPOINT ["/app/bestdoctors_service"]

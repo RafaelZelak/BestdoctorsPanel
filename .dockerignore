@@ -1,0 +1,16 @@
+# Add these to .gitignore if not already present
+
+# Docker
+docker-compose.override.yml
+
+# Frontend
+frontend/dist/
+frontend/node_modules/
+frontend/.env.local
+frontend/.env.*.local
+
+# Backend
+backend/bestdoctors_service
+
+# Logs
+*.log

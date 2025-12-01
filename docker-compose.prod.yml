@@ -1,0 +1,186 @@
+version: '3.8'
+
+services:
+  # Traefik - Reverse Proxy with Auto SSL
+  traefik:
+    image: traefik:v2.10
+    container_name: bestdoctors_traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/traefik.yml:ro
+      - ./traefik/dynamic.yml:/dynamic.yml:ro
+      - ./traefik/acme.json:/acme.json
+    networks:
+      - traefik-public
+      - bestdoctors-network
+    environment:
+      - TRAEFIK_DOMAIN=${TRAEFIK_DOMAIN}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+  # Redis - Session Store (Internal Network Only)
+  redis:
+    image: redis:7-alpine
+    container_name: bestdoctors_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis-data:/data
+    networks:
+      - bestdoctors-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # Database Migrator (Runs once on startup)
+  migrator:
+    image: alpine:3.19
+    container_name: bestdoctors_migrator
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./backend/migrations:/migrations:ro
+    environment:
+      - PG_HOST=${PG_HOST}
+      - PG_PORT=${PG_PORT}
+      - PG_USER=${PG_USER}
+      - PG_PASSWORD=${PG_PASSWORD}
+      - PG_DATABASE=${PG_DATABASE}
+    command: >
+      sh -c "apk add --no-cache postgresql-client &&
+             echo 'Waiting for database...' &&
+             sleep 5 &&
+             echo 'Running migrations...' &&
+             PGPASSWORD=$$PG_PASSWORD psql -h $$PG_HOST -p $$PG_PORT -U $$PG_USER -d $$PG_DATABASE -f /migrations/001_create_users.sql &&
+             echo 'Migrations completed!'"
+    networks:
+      - bestdoctors-network
+
+  # Backend Service - Go API (Internal Network Only)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: bestdoctors_backend
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - PORT=9002
+      - ENVIRONMENT=production
+      # SuperAdmin credentials
+      - SUPERADMIN_USERNAME=${SUPERADMIN_USERNAME}
+      - SUPERADMIN_PASSWORD=${SUPERADMIN_PASSWORD}
+      # Redis
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      # CORS
+      - ALLOWED_ORIGIN=https://${TRAEFIK_DOMAIN}
+      # Database configuration
+      - PG_HOST=${PG_HOST}
+      - PG_PORT=${PG_PORT}
+      - PG_USER=${PG_USER}
+      - PG_PASSWORD=${PG_PASSWORD}
+      - PG_DATABASE=${PG_DATABASE}
+      - PG_SSLMODE=${PG_SSLMODE:-require}
+      # Optional: Supabase API
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      # Twilio
+      - TWILIO_URL=${TWILIO_URL}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+    networks:
+      - bestdoctors-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      # API routes
+      - "traefik.http.routers.backend-api.rule=Host(`${TRAEFIK_DOMAIN}`) && (PathPrefix(`/bestdoctors/`) || PathPrefix(`/auth/`) || PathPrefix(`/admin/`))"
+      - "traefik.http.routers.backend-api.entrypoints=websecure"
+      - "traefik.http.routers.backend-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.backend-api.loadbalancer.server.port=9002"
+      # Security middlewares
+      - "traefik.http.routers.backend-api.middlewares=security-headers@file,rate-limit@file"
+
+  # Frontend Service - Vue 3 + Vite (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: bestdoctors_frontend
+    restart: unless-stopped
+    networks:
+      - bestdoctors-network
+      - traefik-public
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    labels:
+      - "traefik.enable=true"
+      # Main frontend
+      - "traefik.http.routers.frontend.rule=Host(`${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      # Security middlewares
+      - "traefik.http.routers.frontend.middlewares=security-headers@file,compression@file"
+
+networks:
+  traefik-public:
+    external: false
+    name: traefik-public
+  bestdoctors-network:
+    driver: bridge
+    name: bestdoctors-network
+    internal: false
+
+volumes:
+  redis-data:
+    name: bestdoctors_redis_data

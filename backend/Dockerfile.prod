@@ -43,14 +43,15 @@ COPY --from=builder --chown=appuser:appuser /app/bestdoctors_service .
 # Copy migrations (read-only)
 COPY --from=builder --chown=appuser:appuser /app/migrations ./migrations
 
-# Create a simple entrypoint script for debugging (as root, before USER switch)
+# Create a simple entrypoint script (as root, before USER switch)
 RUN echo '#!/bin/sh' > /entrypoint.sh && \
+    echo 'set -e' >> /entrypoint.sh && \
     echo 'echo "=== Backend Starting ===" ' >> /entrypoint.sh && \
     echo 'echo "User: $(whoami)"' >> /entrypoint.sh && \
-    echo 'echo "Working dir: $(pwd)"' >> /entrypoint.sh && \
-    echo 'ls -la /app/' >> /entrypoint.sh && \
-    echo 'echo "Executing backend..."' >> /entrypoint.sh && \
-    echo 'exec /app/bestdoctors_service' >> /entrypoint.sh && \
+    echo 'echo "PWD: $(pwd)"' >> /entrypoint.sh && \
+    echo 'echo "Binary: $(ls -lah /app/bestdoctors_service)"' >> /entrypoint.sh && \
+    echo 'echo "Launching backend with unbuffered output..."' >> /entrypoint.sh && \
+    echo 'exec /app/bestdoctors_service 2>&1' >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 # Expose port

@@ -21,7 +21,7 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@example.com # TODO: Replace with your email
+      email: infra@setuptecnologia.com.br
       storage: /acme.json
       httpChallenge:
         entryPoint: web

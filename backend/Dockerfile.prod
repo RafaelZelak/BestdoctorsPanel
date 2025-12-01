@@ -49,5 +49,15 @@ EXPOSE 9002
 # Run as non-root user
 USER appuser:appuser
 
-# Run the application
-CMD ["/app/bestdoctors_service"]
+# Create a simple entrypoint script for debugging
+RUN echo '#!/bin/sh' > /entrypoint.sh && \
+    echo 'echo "=== Backend Starting ===" ' >> /entrypoint.sh && \
+    echo 'echo "User: $(whoami)"' >> /entrypoint.sh && \
+    echo 'echo "Working dir: $(pwd)"' >> /entrypoint.sh && \
+    echo 'ls -la /app/' >> /entrypoint.sh && \
+    echo 'echo "Executing backend..."' >> /entrypoint.sh && \
+    echo 'exec /app/bestdoctors_service' >> /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+# Run the application with debug wrapper
+CMD ["/bin/sh", "/entrypoint.sh"]

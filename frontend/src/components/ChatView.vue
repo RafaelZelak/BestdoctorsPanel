@@ -4,35 +4,49 @@
     <header class="p-4 border-b border-neutral-800 relative">
       <div class="flex items-center justify-between">
         <!-- Session info -->
-        <div class="flex flex-col text-left min-w-0">
-          <span class="text-lg font-semibold truncate">
-            <template v-if="session">
-              {{ session.lead_name ? session.lead_name : prettyPhone(session.phone) }}
-              <span
-                class="ml-2 text-xs px-2 py-0.5 rounded-full border align-middle"
-                :class="session.ai_active ? 'border-emerald-500 text-emerald-400' : 'border-neutral-600 text-neutral-400'"
-              >
-                {{ session.ai_active ? 'AI active' : 'AI off' }}
-              </span>
-            </template>
-            <template v-else>
-              Selecione uma conversa
-            </template>
-          </span>
-
-          <!-- Phone under name (when lead_name exists) -->
-          <span
-            v-if="session && session.lead_name"
-            class="text-sm text-neutral-400 truncate"
+        <div class="flex items-center min-w-0 flex-1">
+          <!-- Back Button (Mobile Only) -->
+          <button
+            v-if="isMobile"
+            @click="$emit('back')"
+            class="mr-3 p-2 -ml-2 rounded-full hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"
+            aria-label="Voltar"
           >
-            {{ prettyPhone(session.phone) }}
-          </span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <div class="flex flex-col text-left min-w-0">
+            <span class="text-lg font-semibold truncate flex items-center">
+              <template v-if="session">
+                {{ session.lead_name ? session.lead_name : prettyPhone(session.phone) }}
+                <span
+                  class="ml-2 text-xs px-2 py-0.5 rounded-full border align-middle whitespace-nowrap"
+                  :class="session.ai_active ? 'border-emerald-500 text-emerald-400' : 'border-neutral-600 text-neutral-400'"
+                >
+                  {{ session.ai_active ? 'AI active' : 'AI off' }}
+                </span>
+              </template>
+              <template v-else>
+                Selecione uma conversa
+              </template>
+            </span>
+
+            <!-- Phone under name (when lead_name exists) -->
+            <span
+              v-if="session && session.lead_name"
+              class="text-sm text-neutral-400 truncate"
+            >
+              {{ prettyPhone(session.phone) }}
+            </span>
+          </div>
         </div>
 
         <!-- Info menu trigger (hamburgers.css – spring) -->
         <button
           v-if="session"
-          class="ml-4 inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-neutral-800/60 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="ml-4 inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-neutral-800/60 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-shrink-0"
           @click="showInfo = !showInfo"
           aria-label="Show conversation info"
           title="Info"
@@ -107,18 +121,19 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import { useChatHistory } from '@/composables/useChatHistory'
 import { extractMessageText } from '@/utils/extractText'
 import { formatTime, prettyPhone } from '@/utils/formatters'
-import MessageBubble from './MessageBubble.vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import ChatInfoMenu from './ChatInfoMenu.vue'
+import MessageBubble from './MessageBubble.vue'
 import SendMessage from './SendMessage.vue'
 
-const emit = defineEmits(['session-updated'])
+const emit = defineEmits(['session-updated', 'back'])
 
 const props = defineProps({
   session: { type: Object, default: null },
+  isMobile: { type: Boolean, default: false },
 })
 
 const {

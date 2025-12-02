@@ -28,7 +28,7 @@
     leave-to-class="opacity-0 -translate-y-2 scale-95"
   >
     <div
-      class="absolute right-4 top-18 z-50 w-[420px] rounded-2xl bg-neutral-900/80 backdrop-blur shadow-xl border border-neutral-700"
+      class="absolute right-4 top-16 z-50 w-[calc(100%-2rem)] md:w-[420px] rounded-2xl bg-neutral-900/80 backdrop-blur shadow-xl border border-neutral-700"
       role="dialog"
       aria-label="Conversation info"
       @click.stop
@@ -136,9 +136,9 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { prettyPhone } from '@/utils/formatters'
 import { toggleSessionActive } from '@/api'
+import { prettyPhone } from '@/utils/formatters'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   session: { type: Object, default: null },

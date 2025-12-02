@@ -36,7 +36,20 @@
           </header>
 
           <!-- Content -->
-          <div class="p-6 flex-grow overflow-auto space-y-6 overflow-hidden">
+         <div 
+            v-if="isMobile" 
+            class="flex items-center justify-center flex-grow text-center p-10"
+          >
+            <p class="text-lg text-neutral-300">
+              Acesse por um Computador para gerar relatórios
+            </p>
+          </div>
+
+          <!-- Desktop Content -->
+          <div 
+            v-else 
+            class="p-6 flex-grow overflow-auto space-y-6 overflow-hidden"
+          >
             <!-- Step 1: Report Type -->
             <section>
               <label for="reportType" class="block text-sm mb-2">Tipo de Relatório</label>
@@ -200,13 +213,16 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch, computed } from 'vue'
+import { downloadReport, requestReport } from '@/api'
 import ReportPreviewTable from '@/components/report/ReportPreviewTable.vue'
-import { requestReport, downloadReport } from '@/api'
+import { useResponsive } from '@/composables/useResponsive'
+import { computed, reactive, ref, watch } from 'vue'
 
 const props = defineProps({ isVisible: { type: Boolean, default: false } })
 const emit = defineEmits(['close'])
 const closeModal = () => emit('close')
+
+const { isMobile } = useResponsive()
 
 const form = reactive({
   report: '',   // 'session' | 'abandonment' | 'flowDepth' | 'reengagement'

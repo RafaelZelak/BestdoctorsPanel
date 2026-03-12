@@ -18,9 +18,10 @@ type Store struct {
 }
 
 type SessionData struct {
-	UserID   int    `json:"user_id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	UserID   int      `json:"user_id"`
+	Username string   `json:"username"`
+	Role     string   `json:"role"`
+	System   []string `json:"system"`
 }
 
 func NewStore(redisURL string) (*Store, error) {

@@ -28,14 +28,14 @@ if [ -f docker-compose.yml ]; then
 fi
 
 echo "  Cleaning up everything (containers, volumes, orphans)..."
-docker-compose down --volumes --remove-orphans
+docker compose down --volumes --remove-orphans
 
 if [ "$1" == "dev" ]; then
     echo "Starting in DEVELOPMENT mode..."
-    docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 else
     echo "Starting in PRODUCTION mode..."
-    docker-compose up --build -d
+    docker compose up --build -d
     echo "   Services started in background."
     echo "   Backend: http://localhost:9002"
     echo "   Frontend: http://localhost:80"

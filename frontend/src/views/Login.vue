@@ -10,12 +10,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h1 class="text-3xl font-bold text-white mb-2">Chat BestDoctors</h1>
-          <p class="text-neutral-400">Painel do WhatsApp</p>
+          <h1 class="text-3xl font-bold text-white mb-2">Painel de Sistemas</h1>
+          <p class="text-neutral-400">Autenticação</p>
         </div>
 
         <!-- Form -->
-        <form @submit.prevent="handleLogin" class="space-y-6">
+        <!-- Form Step 1: Login Credentials -->
+        <form v-if="step === 1" @submit.prevent="handleLogin" class="space-y-6">
           <!-- Username -->
           <div>
             <label class="block text-sm font-medium text-neutral-300 mb-2">
@@ -65,6 +66,25 @@
           </button>
         </form>
 
+        <!-- Form Step 2: System Selection -->
+        <div v-else-if="step === 2" class="space-y-4">
+          <h2 class="text-xl font-semibold text-white mb-4 text-center">Selecione o Sistema</h2>
+          <div class="grid gap-3">
+            <button
+              v-for="sys in availableSystems"
+              :key="sys"
+              @click="handleSystemSelection(sys)"
+              class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 rounded-lg transition border border-slate-600"
+            >
+              {{ formatSystemName(sys) }}
+            </button>
+          </div>
+          
+          <button @click="step = 1" class="w-full mt-4 text-sm text-neutral-400 hover:text-white transition">
+            Voltar
+          </button>
+        </div>
+
         <!-- Footer -->
         <div class="mt-6 text-center text-sm text-neutral-500">
           Secure authentication with session management
@@ -84,6 +104,16 @@ const username = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+const step = ref(1)
+const availableSystems = ref([])
+
+function formatSystemName(sys) {
+  const names = {
+    'bestdoctors_chat': 'Chat BestDoctors',
+    'digesac_homol': 'Digesac (Homologação)'
+  }
+  return names[sys] || sys
+}
 
 async function handleLogin() {
   error.value = ''
@@ -92,9 +122,22 @@ async function handleLogin() {
   try {
     const response = await login(username.value, password.value)
     if (response.success) {
-      // Store minimal user info in localStorage (optional)
       if (response.user) {
         localStorage.setItem('user', JSON.stringify(response.user))
+        
+        const systems = response.user.system || [];
+        
+        if (systems.length > 1) {
+          availableSystems.value = systems;
+          step.value = 2; // Move to select screen
+          return;
+        } else if (systems.length === 1) {
+          handleSystemSelection(systems[0]);
+          return;
+        } else {
+          error.value = 'Usuário sem sistemas vinculados.';
+          return;
+        }
       }
       router.push('/')
     } else {
@@ -104,6 +147,17 @@ async function handleLogin() {
     error.value = err.message || 'Network error. Please try again.'
   } finally {
     loading.value = false
+  }
+}
+
+function handleSystemSelection(sys) {
+  if (sys === 'bestdoctors_chat') {
+    router.push('/')
+  } else if (sys === 'digesac_homol') {
+    router.push('/digesac-homol')
+  } else {
+    // Default fallback
+    router.push('/')
   }
 }
 </script>

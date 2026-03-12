@@ -1,5 +1,5 @@
 import { checkAdminAuth } from '@/api/admin'
-import { checkAuth } from '@/api/auth'
+import { getCurrentUser } from '@/api/auth'
 import Dashboard from '@/components/Dashboard.vue'
 import Login from '@/views/Login.vue'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -15,7 +15,13 @@ const routes = [
     path: '/',
     name: 'Dashboard',
     component: Dashboard,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresSystem: 'bestdoctors_chat' }
+  },
+  {
+    path: '/digesac-homol',
+    name: 'DigesacHomol',
+    component: () => import('@/views/DigesacHomol.vue'),
+    meta: { requiresAuth: true, requiresSystem: 'digesac_homol' }
   },
   // Admin routes
   {
@@ -59,13 +65,27 @@ router.beforeEach(async (to, from, next) => {
 
   // For regular routes, check regular auth
   try {
-    const isAuthenticated = await checkAuth()
+    const user = await getCurrentUser()
     
-    if (!isAuthenticated) {
-      next('/login')
-    } else {
-      next()
+    if (to.meta.requiresSystem) {
+      const systems = user?.system || []
+      const hasAccess = systems.includes(to.meta.requiresSystem)
+      
+      if (!hasAccess) {
+        // Redireciona o usuário para algum sistema que ele TENHA acesso
+        if (systems.includes('bestdoctors_chat')) {
+          next('/')
+        } else if (systems.includes('digesac_homol')) {
+          next('/digesac-homol')
+        } else {
+          // Último caso (sem sistemas), volta pro login
+          next('/login')
+        }
+        return
+      }
     }
+    
+    next()
   } catch (error) {
     console.error('Auth check failed:', error)
     next('/login')

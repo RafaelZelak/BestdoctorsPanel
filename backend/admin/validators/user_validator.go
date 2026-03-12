@@ -15,22 +15,24 @@ var (
 )
 
 type CreateUserRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	FullName string `json:"full_name"`
-	Role     string `json:"role"`
-	IsActive bool   `json:"is_active"`
+	Username string   `json:"username"`
+	Email    string   `json:"email"`
+	Password string   `json:"password"`
+	FullName string   `json:"full_name"`
+	Role     string   `json:"role"`
+	System   []string `json:"system"`
+	IsActive bool     `json:"is_active"`
 }
 
 type UpdateUserRequest struct {
-	Email    *string `json:"email"`
-	FullName *string `json:"full_name"`
-	Role     *string `json:"role"`
-	IsActive *bool   `json:"is_active"`
+	Email    *string   `json:"email"`
+	FullName *string   `json:"full_name"`
+	Role     *string   `json:"role"`
+	System   *[]string `json:"system"`
+	IsActive *bool     `json:"is_active"`
 }
 
-type ResetPasswordRequest struct{
+type ResetPasswordRequest struct {
 	NewPassword string `json:"new_password"`
 }
 

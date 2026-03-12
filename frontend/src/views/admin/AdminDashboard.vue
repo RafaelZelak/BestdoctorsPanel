@@ -40,6 +40,7 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Email</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Full Name</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">System</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">Actions</th>
             </tr>
           </thead>
@@ -53,6 +54,13 @@
                 <span :class="user.is_active ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'" class="px-2 py-1 rounded text-xs">
                   {{ user.is_active ? 'Active' : 'Inactive' }}
                 </span>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-300">
+                <div class="flex flex-wrap gap-1">
+                  <span v-for="sys in user.system" :key="sys" class="px-2 py-0.5 bg-gray-700 rounded text-xs">
+                    {{ sys }}
+                  </span>
+                </div>
               </td>
               <td class="px-6 py-4 text-sm text-right space-x-2">
                 <button @click="openEditModal(user)" class="text-blue-400 hover:text-blue-300">Edit</button>
@@ -86,6 +94,11 @@
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-1">Full Name</label>
             <input v-model="formData.full_name" type="text" required class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white" />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">System <span class="text-xs text-gray-500">(comma-separated)</span></label>
+            <input v-model="formData.system" type="text" required class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white" placeholder="bestdoctors_chat" />
           </div>
 
           <div v-if="!isEditing">
@@ -133,6 +146,7 @@ const formData = ref({
   username: '',
   email: '',
   full_name: '',
+  system: '',
   password: '',
   role: 'user',
   is_active: true
@@ -156,10 +170,15 @@ async function loadUsers() {
 
 function openCreateModal() {
   isEditing.value = false
+  const systemArray = typeof formData.value.system === 'string' 
+    ? formData.value.system.split(',').map(s => s.trim()).filter(s => s) 
+    : formData.value.system;
+
   formData.value = {
     username: '',
     email: '',
     full_name: '',
+    system: systemArray || [],
     password: '',
     is_active: true
   }
@@ -173,6 +192,7 @@ function openEditModal(user) {
     id: user.id,
     email: user.email,
     full_name: user.full_name,
+    system: (user.system || []).join(', '),
     is_active: user.is_active
   }
   modalError.value = ''
@@ -189,14 +209,20 @@ async function submitForm() {
   modalLoading.value = true
 
   try {
+    const systemArray = typeof formData.value.system === 'string' 
+      ? formData.value.system.split(',').map(s => s.trim()).filter(s => s) 
+      : formData.value.system || [];
+      
     if (isEditing.value) {
       await updateUser(formData.value.id, {
         email: formData.value.email,
         full_name: formData.value.full_name,
+        system: systemArray,
         is_active: formData.value.is_active
       })
     } else {
-      await createUser(formData.value)
+      const payload = { ...formData.value, system: systemArray };
+      await createUser(payload)
     }
     
     closeModal()

@@ -96,7 +96,7 @@ func main() {
 	protectedMux.HandleFunc("/bestdoctors/sendmessage", routes.SendMessageHandler)
 	protectedMux.HandleFunc("/bestdoctors/report", routes.ReportHandler)
 
-	mux.Handle("/bestdoctors/", middleware.RateLimitMiddleware(apiLimiter)(authMW(protectedMux)))
+	mux.Handle("/bestdoctors/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bestdoctors_chat")(protectedMux))))
 
 	
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())

@@ -38,10 +38,11 @@ type LoginResponse struct {
 }
 
 type UserInfo struct {
-	ID       int    `json:"id"`
-	Username string `json:"username"`
-	FullName string `json:"full_name"`
-	Role     string `json:"role"`
+	ID       int      `json:"id"`
+	Username string   `json:"username"`
+	FullName string   `json:"full_name"`
+	Role     string   `json:"role"`
+	System   []string `json:"system"`
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -93,10 +94,16 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	user.LastLogin = &now
 	db.DB.Save(&user)
 
+	var systemList []string
+	if len(user.System) > 0 {
+		_ = json.Unmarshal(user.System, &systemList)
+	}
+
 	sessionID, err := sessionStore.Create(r.Context(), session.SessionData{
 		UserID:   user.ID,
 		Username: user.Username,
 		Role:     user.Role,
+		System:   systemList,
 	})
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -123,6 +130,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			Username: user.Username,
 			FullName: user.FullName,
 			Role:     user.Role,
+			System:   systemList,
 		},
 	})
 }
@@ -174,11 +182,17 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var systemList []string
+	if len(user.System) > 0 {
+		_ = json.Unmarshal(user.System, &systemList)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(UserInfo{
 		ID:       user.ID,
 		Username: user.Username,
 		FullName: user.FullName,
 		Role:     user.Role,
+		System:   systemList,
 	})
 }

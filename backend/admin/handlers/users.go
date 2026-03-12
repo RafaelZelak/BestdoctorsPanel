@@ -10,6 +10,8 @@ import (
 	"bestdoctors_service/admin/validators"
 	"bestdoctors_service/internal/db"
 	"bestdoctors_service/models"
+
+	"gorm.io/datatypes"
 )
 
 func UsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,11 +121,18 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	systemBytes, err := json.Marshal(req.System)
+	if err != nil {
+		http.Error(w, "Invalid system data", http.StatusBadRequest)
+		return
+	}
+
 	user := models.User{
 		Username: req.Username,
 		Email:    req.Email,
 		FullName: req.FullName,
 		Role:     "user",
+		System:   datatypes.JSON(systemBytes),
 		IsActive: req.IsActive,
 	}
 
@@ -190,6 +199,12 @@ func updateUser(w http.ResponseWriter, r *http.Request, userID int) {
 	}
 	if req.FullName != nil {
 		user.FullName = *req.FullName
+	}
+	if req.System != nil {
+		systemBytes, err := json.Marshal(*req.System)
+		if err == nil {
+			user.System = datatypes.JSON(systemBytes)
+		}
 	}
 	if req.IsActive != nil {
 		user.IsActive = *req.IsActive

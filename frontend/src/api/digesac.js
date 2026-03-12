@@ -1,6 +1,6 @@
 // src/api/digesac.js
 
-const API_BASE = 'http://192.168.9.252/api/digesac/homol';
+const API_BASE = 'http://189.45.140.206/api/digesac/homol';
 const _k = 'aG9tb2w6ajBkYSFod2o0RDJjdG9y'; // Base64 encoded credentials
 
 export async function fetchPromptsList() {

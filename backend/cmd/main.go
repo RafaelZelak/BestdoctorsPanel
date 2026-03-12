@@ -98,6 +98,10 @@ func main() {
 
 	mux.Handle("/bestdoctors/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bestdoctors_chat")(protectedMux))))
 
+	digesacMux := http.NewServeMux()
+	digesacMux.HandleFunc("/digesac/homol/", routes.DigesacProxyHandler)
+	mux.Handle("/digesac/homol/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("digesac_homol")(digesacMux))))
+
 	
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())
 	

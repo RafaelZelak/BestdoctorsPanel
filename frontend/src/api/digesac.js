@@ -1,13 +1,10 @@
 // src/api/digesac.js
 
-const API_BASE = 'http://189.45.140.206/api/digesac/homol';
-const _k = 'aG9tb2w6ajBkYSFod2o0RDJjdG9y'; // Base64 encoded credentials
+const API_BASE = '/digesac/homol';
 
 export async function fetchPromptsList() {
     const res = await fetch(`${API_BASE}/prompts?content=false`, {
-        headers: {
-            'Authorization': `Basic ${_k}`
-        }
+        credentials: 'include'
     });
     if (!res.ok) {
         throw new Error(`Failed to fetch prompts list: ${res.statusText}`);
@@ -17,9 +14,7 @@ export async function fetchPromptsList() {
 
 export async function fetchPromptDetails(name) {
     const res = await fetch(`${API_BASE}/prompts/${name}`, {
-        headers: {
-            'Authorization': `Basic ${_k}`
-        }
+        credentials: 'include'
     });
     if (!res.ok) {
         throw new Error(`Failed to fetch prompt ${name}: ${res.statusText}`);
@@ -31,9 +26,9 @@ export async function updatePrompt(name, promptContent) {
     const res = await fetch(`${API_BASE}/prompts/${name}`, {
         method: 'PATCH',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${_k}`
+            'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ prompt: promptContent })
     });
     if (!res.ok) {
@@ -45,9 +40,7 @@ export async function updatePrompt(name, promptContent) {
 export async function syncAllPrompts() {
     const res = await fetch(`${API_BASE}/prompts/sync`, {
         method: 'PUT',
-        headers: {
-            'Authorization': `Basic ${_k}`
-        }
+        credentials: 'include'
     });
     if (!res.ok) {
         throw new Error(`Failed to sync all prompts: ${res.statusText}`);
@@ -58,9 +51,7 @@ export async function syncAllPrompts() {
 export async function syncSinglePrompt(name) {
     const res = await fetch(`${API_BASE}/prompts/sync/${name}`, {
         method: 'PUT',
-        headers: {
-            'Authorization': `Basic ${_k}`
-        }
+        credentials: 'include'
     });
     if (!res.ok) {
         throw new Error(`Failed to sync prompt ${name}: ${res.statusText}`);

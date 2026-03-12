@@ -22,18 +22,17 @@ func getEnv(key string) string {
 	return value
 }
 
-
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := getEnv("ALLOWED_ORIGIN")
 		if origin == "" {
-			origin = "http://localhost" 
+			origin = "http://localhost"
 		}
 
 		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		w.Header().Set("Access-Control-Allow-Credentials", "true") 
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Max-Age", "3600")
 
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -99,20 +98,19 @@ func main() {
 	mux.Handle("/bestdoctors/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bestdoctors_chat")(protectedMux))))
 
 	digesacMux := http.NewServeMux()
-	digesacMux.HandleFunc("/digesac/homol/", routes.DigesacProxyHandler)
+	digesacMux.HandleFunc("/", routes.DigesacProxyHandler)
 	mux.Handle("/digesac/homol/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("digesac_homol")(digesacMux))))
 
-	
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())
-	
-	adminLimiter := middleware.NewIPRateLimiter(rate.Limit(2.0/60.0), 2) 
+
+	adminLimiter := middleware.NewIPRateLimiter(rate.Limit(2.0/60.0), 2)
 	mux.Handle("/admin/auth", middleware.RateLimitMiddleware(adminLimiter)(http.HandlerFunc(adminHandler.SuperAdminLoginHandler)))
 	mux.HandleFunc("/admin/logout", adminHandler.LogoutHandler)
-	
+
 	adminMux := http.NewServeMux()
-	adminMux.HandleFunc("/admin/users", adminHandler.UsersHandler)     
-	adminMux.HandleFunc("/admin/users/", adminHandler.UserHandler)     
-	
+	adminMux.HandleFunc("/admin/users", adminHandler.UsersHandler)
+	adminMux.HandleFunc("/admin/users/", adminHandler.UserHandler)
+
 	adminAuthMW := adminMW.AdminMiddleware(routes.GetSessionStore())
 	mux.Handle("/admin/users", adminAuthMW(adminMux))
 	mux.Handle("/admin/users/", adminAuthMW(adminMux))

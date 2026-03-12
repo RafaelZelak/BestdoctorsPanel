@@ -21,7 +21,7 @@ func DigesacProxyHandler(w http.ResponseWriter, r *http.Request) {
 	// Strip the frontend prefix to get the upstream path.
 	// Incoming:  /digesac/homol/prompts?content=false
 	// Upstream:  http://189.45.140.206/api/digesac/homol/prompts?content=false
-	upstreamPath := strings.TrimPrefix(r.URL.Path, "/digesac/homol")
+	upstreamPath := r.URL.Path
 	upstreamURL := fmt.Sprintf("%s%s", strings.TrimRight(upstreamBase, "/"), upstreamPath)
 	if r.URL.RawQuery != "" {
 		upstreamURL += "?" + r.URL.RawQuery

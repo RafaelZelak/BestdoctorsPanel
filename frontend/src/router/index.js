@@ -23,6 +23,12 @@ const routes = [
     component: () => import('@/views/DigesacHomol.vue'),
     meta: { requiresAuth: true, requiresSystem: 'digesac_homol' }
   },
+  {
+    path: '/bia-homol',
+    name: 'BiaHomol',
+    component: () => import('@/views/BiaHomol.vue'),
+    meta: { requiresAuth: true, requiresSystem: 'bia_homol' }
+  },
   // Admin routes
   {
     path: '/admin/login',
@@ -75,6 +81,8 @@ router.beforeEach(async (to, from, next) => {
         // Redireciona o usuário para algum sistema que ele TENHA acesso
         if (systems.includes('bestdoctors_chat')) {
           next('/')
+        } else if (systems.includes('bia_homol')) {
+          next('/bia-homol')
         } else if (systems.includes('digesac_homol')) {
           next('/digesac-homol')
         } else {

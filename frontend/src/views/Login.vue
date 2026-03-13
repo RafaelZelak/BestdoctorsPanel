@@ -110,7 +110,8 @@ const availableSystems = ref([])
 function formatSystemName(sys) {
   const names = {
     'bestdoctors_chat': 'Chat BestDoctors',
-    'digesac_homol': 'Digesac (Homologação)'
+    'digesac_homol': 'Digesac (Homologação)',
+    'bia_homol': 'Bia (Homologação)'
   }
   return names[sys] || sys
 }
@@ -155,6 +156,8 @@ function handleSystemSelection(sys) {
     router.push('/')
   } else if (sys === 'digesac_homol') {
     router.push('/digesac-homol')
+  } else if (sys === 'bia_homol') {
+    router.push('/bia-homol')
   } else {
     // Default fallback
     router.push('/')

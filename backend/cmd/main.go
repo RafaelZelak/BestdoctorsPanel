@@ -101,6 +101,10 @@ func main() {
 	digesacMux.HandleFunc("/", routes.DigesacProxyHandler)
 	mux.Handle("/digesac/homol/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("digesac_homol")(digesacMux))))
 
+	biaMux := http.NewServeMux()
+	biaMux.HandleFunc("/", routes.BiaHomolProxyHandler)
+	mux.Handle("/bia/homol/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bia_homol")(biaMux))))
+
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())
 
 	adminLimiter := middleware.NewIPRateLimiter(rate.Limit(2.0/60.0), 2)

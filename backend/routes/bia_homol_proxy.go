@@ -18,8 +18,8 @@ func BiaHomolProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Strip the /bia/homol prefix so only the tail appends to BIA_HOMOL_URL.
-	upstreamPath := strings.TrimPrefix(r.URL.Path, "/bia/homol")
+	// Strip the /bestdoctors/bia/homol prefix so only the tail appends to BIA_HOMOL_URL.
+	upstreamPath := strings.TrimPrefix(r.URL.Path, "/bestdoctors/bia/homol")
 	upstreamURL := fmt.Sprintf("%s%s", strings.TrimRight(upstreamBase, "/"), upstreamPath)
 	if r.URL.RawQuery != "" {
 		upstreamURL += "?" + r.URL.RawQuery

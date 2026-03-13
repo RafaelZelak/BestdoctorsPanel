@@ -103,7 +103,8 @@ func main() {
 
 	biaMux := http.NewServeMux()
 	biaMux.HandleFunc("/", routes.BiaHomolProxyHandler)
-	mux.Handle("/bia/homol/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bia_homol")(biaMux))))
+	// Use a backend-specific prefix to avoid clashing with existing Bia WebChat routes
+	mux.Handle("/bestdoctors/bia/homol/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bia_homol")(biaMux))))
 
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())
 

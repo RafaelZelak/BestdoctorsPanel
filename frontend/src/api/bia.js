@@ -1,6 +1,6 @@
 // src/api/bia.js
-
-const API_BASE = '/bia/homol';
+// Use backend-prefixed path to avoid clashing with existing Bia WebChat frontend routes
+const API_BASE = '/bestdoctors/bia/homol';
 
 export async function fetchPromptsList() {
     const res = await fetch(`${API_BASE}/prompts?content=false`, {

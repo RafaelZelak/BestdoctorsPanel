@@ -20,6 +20,53 @@
         </div>
       </div>
     </div>
+
+    <!-- Create Prompt Modal -->
+    <div v-if="showCreateModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div class="bg-neutral-800 rounded-xl p-6 max-w-lg w-full border border-neutral-700 shadow-2xl">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white">Novo Prompt</h3>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-1.5">Nome do arquivo</label>
+            <input
+              v-model="newPromptName"
+              type="text"
+              placeholder="ex: meu_prompt.md"
+              class="w-full bg-neutral-900 text-neutral-100 px-3 py-2 rounded-lg border border-neutral-700 focus:outline-none focus:border-green-500 font-mono text-sm transition"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-1.5">Conteúdo</label>
+            <textarea
+              v-model="newPromptContent"
+              rows="8"
+              placeholder="Digite o conteúdo markdown do prompt..."
+              class="w-full bg-neutral-900 text-neutral-100 px-3 py-2 rounded-lg border border-neutral-700 focus:outline-none focus:border-green-500 font-mono text-sm resize-none transition"
+            ></textarea>
+          </div>
+          <p v-if="createError" class="text-sm text-red-400">{{ createError }}</p>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button @click="closeCreateModal" class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg text-sm font-medium transition">
+            Cancelar
+          </button>
+          <button @click="handleCreatePrompt" :disabled="creating" class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+            <svg v-if="creating" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>{{ creating ? 'Criando...' : 'Criar Prompt' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
     <!-- Header -->
     <header class="flex-shrink-0 p-4 bg-neutral-800 border-b border-neutral-700 flex items-center justify-between">
       <div>
@@ -45,8 +92,17 @@
     <div class="flex-1 flex overflow-hidden">
       <!-- Sidebar / List -->
       <aside class="w-72 bg-neutral-800 border-r border-neutral-700 flex flex-col overflow-hidden">
-        <div class="p-4 border-b border-neutral-700 flex-shrink-0">
+        <div class="p-4 border-b border-neutral-700 flex-shrink-0 flex items-center justify-between">
           <h2 class="font-semibold text-neutral-200">Arquivos .md</h2>
+          <button
+            @click="showCreateModal = true"
+            title="Criar novo prompt"
+            class="w-7 h-7 flex items-center justify-center rounded-lg bg-green-600 hover:bg-green-500 text-white transition"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
         </div>
         
         <div class="flex-1 overflow-y-auto p-2 space-y-1">
@@ -111,6 +167,16 @@
               <button @click="startEditing" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm text-white font-medium transition cursor-pointer">
                 Editar
               </button>
+              <button @click="handleDeletePrompt" :disabled="deleting" class="px-3 py-1.5 bg-red-700 hover:bg-red-600 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition cursor-pointer flex items-center gap-1.5">
+                <svg v-if="deleting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span>{{ deleting ? 'Apagando...' : 'Apagar' }}</span>
+              </button>
             </div>
             <div v-else class="flex gap-2">
               <button @click="cancelEditing" class="px-4 py-1.5 bg-neutral-600 hover:bg-neutral-500 rounded-lg text-sm text-white font-medium transition cursor-pointer">
@@ -155,7 +221,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout } from '@/api/auth'
-import { fetchPromptsList, fetchPromptDetails, updatePrompt, syncAllPrompts, syncSinglePrompt } from '@/api/bia'
+import { fetchPromptsList, fetchPromptDetails, updatePrompt, syncAllPrompts, syncSinglePrompt, createPrompt, deletePrompt } from '@/api/bia'
 import { marked } from 'marked'
 
 const router = useRouter()
@@ -188,9 +254,17 @@ const editContent = ref('')
 const saving = ref(false)
 const syncingAll = ref(false)
 const syncingSingle = ref(false)
+const deleting = ref(false)
 
 // Modal State
 const modalInfo = ref(null)
+
+// Create Prompt Modal State
+const showCreateModal = ref(false)
+const newPromptName = ref('')
+const newPromptContent = ref('')
+const creating = ref(false)
+const createError = ref('')
 
 function getPromptClass(promptName) {
   if (selectedPromptName.value === promptName) {
@@ -351,6 +425,54 @@ async function handleSyncSingle() {
     alert("Erro ao resetar prompt.")
   } finally {
     syncingSingle.value = false
+  }
+}
+
+function closeCreateModal() {
+  showCreateModal.value = false
+  newPromptName.value = ''
+  newPromptContent.value = ''
+  createError.value = ''
+}
+
+async function handleCreatePrompt() {
+  const trimmedName = newPromptName.value.trim()
+  if (!trimmedName) {
+    createError.value = 'O nome do arquivo é obrigatório.'
+    return
+  }
+
+  creating.value = true
+  createError.value = ''
+  try {
+    await createPrompt(trimmedName, newPromptContent.value)
+    closeCreateModal()
+    await loadPrompts()
+    await selectPrompt(trimmedName)
+  } catch (error) {
+    console.error(error)
+    createError.value = 'Falha ao criar o prompt. Tente novamente.'
+  } finally {
+    creating.value = false
+  }
+}
+
+async function handleDeletePrompt() {
+  if (!confirm(`Tem certeza que deseja apagar "${selectedPromptName.value}" permanentemente?`)) {
+    return
+  }
+
+  deleting.value = true
+  try {
+    await deletePrompt(selectedPromptName.value)
+    selectedPromptName.value = null
+    selectedPromptData.value = null
+    await loadPrompts()
+  } catch (error) {
+    console.error(error)
+    alert('Erro ao apagar o prompt.')
+  } finally {
+    deleting.value = false
   }
 }
 </script>

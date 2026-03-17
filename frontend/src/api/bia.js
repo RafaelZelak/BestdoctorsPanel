@@ -58,3 +58,29 @@ export async function syncSinglePrompt(name) {
     }
     return res.json();
 }
+
+export async function createPrompt(name, promptContent) {
+    const res = await fetch(`${API_BASE}/prompts`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ name, prompt: promptContent })
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to create prompt: ${res.statusText}`);
+    }
+    return res.json();
+}
+
+export async function deletePrompt(name) {
+    const res = await fetch(`${API_BASE}/prompts/${name}`, {
+        method: 'DELETE',
+        credentials: 'include'
+    });
+    if (!res.ok) {
+        throw new Error(`Failed to delete prompt ${name}: ${res.statusText}`);
+    }
+    return res.json();
+}

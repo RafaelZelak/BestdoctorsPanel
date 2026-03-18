@@ -21,6 +21,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/digesac': {
+        target: process.env.VITE_API_PROXY || 'http://backend:9002',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/auth': {
+        target: process.env.VITE_API_PROXY || 'http://backend:9002',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   preview: {

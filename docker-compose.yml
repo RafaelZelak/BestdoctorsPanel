@@ -85,6 +85,14 @@ services:
       - TWILIO_URL=${TWILIO_URL:-}
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
+      # DIGESAC
+      - DIGESAC_API_BASE=${DIGESAC_API_BASE:-}
+      - DIGESAC_API_USER=${DIGESAC_API_USER:-}
+      - DIGESAC_API_PASS=${DIGESAC_API_PASS:-}
+      # BIA HOMOL
+      - BIA_HOMOL_URL=${BIA_HOMOL_URL:-}
+      - BIA_HOMOL_API_USER=${BIA_HOMOL_API_USER:-}
+      - BIA_HOMOL_API_PASS=${BIA_HOMOL_API_PASS:-}
     networks:
       - bestdoctors-network
     healthcheck:

@@ -94,6 +94,9 @@ func main() {
 	protectedMux.HandleFunc("/bestdoctors/metrics/reengagement", routes.ReengagementRateHandler)
 	protectedMux.HandleFunc("/bestdoctors/sendmessage", routes.SendMessageHandler)
 	protectedMux.HandleFunc("/bestdoctors/report", routes.ReportHandler)
+	protectedMux.HandleFunc("/bestdoctors/presence/ws", routes.PresenceWSHandler)
+
+	go routes.StartPresenceEviction()
 
 	mux.Handle("/bestdoctors/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bestdoctors_chat")(protectedMux))))
 

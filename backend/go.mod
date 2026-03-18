@@ -3,6 +3,7 @@ module bestdoctors_service
 go 1.23.0
 
 require (
+	github.com/gorilla/websocket v1.5.3
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/redis/go-redis/v9 v9.3.0
 	github.com/xuri/excelize/v2 v2.9.1

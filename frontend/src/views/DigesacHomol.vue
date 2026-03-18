@@ -127,7 +127,23 @@
             <svg v-else class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span class="truncate">{{ prompt.name }}</span>
+            <span class="truncate flex-1">{{ prompt.name }}</span>
+            <span class="flex items-center gap-1 flex-shrink-0">
+              <span
+                v-for="viewer in (allPresence[prompt.name] || [])"
+                :key="viewer.username"
+                :title="viewer.status === 'editing' ? `${viewer.username} está editando` : `${viewer.username} está visualizando`"
+                :class="[
+                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium leading-none',
+                  viewer.status === 'editing'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                    : 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                ]"
+              >
+                <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" :class="viewer.status === 'editing' ? 'bg-amber-400' : 'bg-blue-400'"></span>
+                {{ viewer.username }}
+              </span>
+            </span>
           </button>
         </div>
       </aside>
@@ -223,8 +239,11 @@ import { useRouter } from 'vue-router'
 import { logout } from '@/api/auth'
 import { fetchPromptsList, fetchPromptDetails, updatePrompt, syncAllPrompts, syncSinglePrompt, createPrompt, deletePrompt } from '@/api/digesac'
 import { marked } from 'marked'
+import { usePresence } from '@/composables/usePresence'
 
 const router = useRouter()
+
+const { allPresence, publishPresence, clearPresence } = usePresence('digesac_homol')
 
 // Standard auth logic
 async function handleLogout() {
@@ -346,6 +365,8 @@ async function selectPrompt(name) {
   detailError.value = ''
   selectedPromptData.value = null
 
+  publishPresence(name, 'viewing')
+
   try {
     const data = await fetchPromptDetails(name)
     selectedPromptData.value = data
@@ -360,11 +381,13 @@ async function selectPrompt(name) {
 function startEditing() {
   editContent.value = selectedPromptData.value?.prompt || '';
   isEditing.value = true;
+  publishPresence(selectedPromptName.value, 'editing')
 }
 
 function cancelEditing() {
   isEditing.value = false;
   editContent.value = '';
+  publishPresence(selectedPromptName.value, 'viewing')
 }
 
 async function savePrompt() {
@@ -381,6 +404,7 @@ async function savePrompt() {
     
     // Exit edit mode smoothly
     isEditing.value = false;
+    publishPresence(selectedPromptName.value, 'viewing')
   } catch (error) {
     console.error(error);
     detailError.value = "Falha ao salvar as modificações. Tente novamente.";

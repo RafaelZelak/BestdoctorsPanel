@@ -7,12 +7,14 @@ const RECONNECT_MAX_MS = 30000
 export function usePresence(scope) {
   const allPresence = ref({})
   const currentPromptName = ref(null)
+  const currentStatus = ref(null)
   const currentUsername = ref(null)
 
   let socket = null
   let reconnectAttempts = 0
   let reconnectTimeoutId = null
   let intentionallyClosed = false
+  let heartbeatIntervalId = null
 
   function buildWebSocketURL() {
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
@@ -27,6 +29,7 @@ export function usePresence(scope) {
 
   function publishPresence(promptName, status) {
     currentPromptName.value = promptName
+    currentStatus.value = status
     send({ scope, prompt: promptName, status })
   }
 
@@ -35,6 +38,23 @@ export function usePresence(scope) {
       send({ scope, prompt: currentPromptName.value, status: 'gone' })
     }
     currentPromptName.value = null
+    currentStatus.value = null
+  }
+
+  function startHeartbeat() {
+    stopHeartbeat()
+    heartbeatIntervalId = setInterval(() => {
+      if (currentPromptName.value && currentStatus.value !== 'gone') {
+        send({ scope, prompt: currentPromptName.value, status: currentStatus.value })
+      }
+    }, 10000) // Send heartbeat every 10 seconds
+  }
+
+  function stopHeartbeat() {
+    if (heartbeatIntervalId) {
+      clearInterval(heartbeatIntervalId)
+      heartbeatIntervalId = null
+    }
   }
 
   function resolveCurrentUsername() {
@@ -112,11 +132,13 @@ export function usePresence(scope) {
   onMounted(() => {
     currentUsername.value = resolveCurrentUsername()
     connect()
+    startHeartbeat()
   })
 
   onUnmounted(() => {
     intentionallyClosed = true
     clearTimeout(reconnectTimeoutId)
+    stopHeartbeat()
     clearPresence()
     if (socket) {
       socket.close()

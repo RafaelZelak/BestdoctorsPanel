@@ -137,7 +137,7 @@ services:
     labels:
       - "traefik.enable=true"
       # API routes
-      - "traefik.http.routers.backend-api.rule=Host(`${TRAEFIK_DOMAIN}`) && (PathPrefix(`/bestdoctors/`) || PathPrefix(`/auth/`) || PathPrefix(`/admin/`) || PathPrefix(`/digesac/homol/`) || PathPrefix(`/bia/homol/`))"
+      - "traefik.http.routers.backend-api.rule=Host(`${TRAEFIK_DOMAIN}`) && (PathPrefix(`/bestdoctors/`) || PathPrefix(`/auth/`) || PathPrefix(`/admin/`) || PathPrefix(`/digesac/homol/`) || PathPrefix(`/bia/homol/`) || PathPrefix(`/api/proxy/`))"
       - "traefik.http.routers.backend-api.entrypoints=websecure"
       - "traefik.http.routers.backend-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend-api.loadbalancer.server.port=9002"

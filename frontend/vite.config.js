@@ -26,6 +26,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/api/proxy': {
+        target: process.env.VITE_API_PROXY || 'http://backend:9002',
+        changeOrigin: true,
+        secure: false,
+      },
       '/auth': {
         target: process.env.VITE_API_PROXY || 'http://backend:9002',
         changeOrigin: true,

@@ -111,7 +111,8 @@ function formatSystemName(sys) {
   const names = {
     'bestdoctors_chat': 'Chat BestDoctors',
     'digesac_homol': 'Digesac (Homologação)',
-    'bia_homol': 'Bia (Homologação)'
+    'bia_homol': 'Bia (Homologação)',
+    'bia_prod': 'Bia (Produção)'
   }
   return names[sys] || sys
 }
@@ -158,6 +159,8 @@ function handleSystemSelection(sys) {
     router.push('/digesac-homol')
   } else if (sys === 'bia_homol') {
     router.push('/bia-homol')
+  } else if (sys === 'bia_prod') {
+    router.push('/bia-prod')
   } else {
     // Default fallback
     router.push('/')

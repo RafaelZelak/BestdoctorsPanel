@@ -112,6 +112,7 @@ func main() {
 	// Register specific subsystem proxies
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/digesac/homol/", "digesac_homol", "DIGESAC_API_BASE", "DIGESAC_API_USER", "DIGESAC_API_PASS")
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/bia/homol/", "bia_homol", "BIA_HOMOL_URL", "BIA_HOMOL_API_USER", "BIA_HOMOL_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/bia/prod/", "bia_prod", "BIA_PROD_URL", "BIA_PROD_API_USER", "BIA_PROD_API_PASS")
 
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())
 

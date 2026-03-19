@@ -31,6 +31,13 @@ const routes = [
     props: { title: 'BIA HOMOL', systemId: 'bia_homol', apiBase: '/api/proxy/bia/homol' },
     meta: { requiresAuth: true, requiresSystem: 'bia_homol' }
   },
+  {
+    path: '/bia-prod',
+    name: 'BiaProd',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'BIA PROD', systemId: 'bia_prod', apiBase: '/api/proxy/bia/prod' },
+    meta: { requiresAuth: true, requiresSystem: 'bia_prod' }
+  },
   // Admin routes
   {
     path: '/admin/login',

@@ -20,13 +20,15 @@ const routes = [
   {
     path: '/digesac-homol',
     name: 'DigesacHomol',
-    component: () => import('@/views/DigesacHomol.vue'),
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'DIGESAC HOMOL', systemId: 'digesac_homol', apiBase: '/api/proxy/digesac/homol' },
     meta: { requiresAuth: true, requiresSystem: 'digesac_homol' }
   },
   {
     path: '/bia-homol',
     name: 'BiaHomol',
-    component: () => import('@/views/BiaHomol.vue'),
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'BIA HOMOL', systemId: 'bia_homol', apiBase: '/api/proxy/bia/homol' },
     meta: { requiresAuth: true, requiresSystem: 'bia_homol' }
   },
   // Admin routes

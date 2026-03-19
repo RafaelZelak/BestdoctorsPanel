@@ -70,7 +70,7 @@
     <!-- Header -->
     <header class="flex-shrink-0 p-4 bg-neutral-800 border-b border-neutral-700 flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-bold tracking-wider text-blue-500">BIA HOMOL</h1>
+        <h1 class="text-xl font-bold tracking-wider text-blue-500">{{ title }}</h1>
         <p class="text-xs text-neutral-400">Gerenciador de Prompts</p>
       </div>
       <div class="flex items-center gap-3">
@@ -237,13 +237,29 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout } from '@/api/auth'
-import { fetchPromptsList, fetchPromptDetails, updatePrompt, syncAllPrompts, syncSinglePrompt, createPrompt, deletePrompt } from '@/api/bia'
+import { createPromptApi } from '@/api/prompts'
 import { marked } from 'marked'
 import { usePresence } from '@/composables/usePresence'
 
+const props = defineProps({
+  title: {
+    type: String,
+    required: true
+  },
+  systemId: {
+    type: String,
+    required: true
+  },
+  apiBase: {
+    type: String,
+    required: true
+  }
+})
+
 const router = useRouter()
 
-const { allPresence, publishPresence, clearPresence } = usePresence('bia_homol')
+const { allPresence, publishPresence, clearPresence } = usePresence(props.systemId)
+const api = createPromptApi(props.apiBase)
 
 // Standard auth logic
 async function handleLogout() {
@@ -315,7 +331,7 @@ async function loadPrompts() {
   loadingList.value = true
   listError.value = ''
   try {
-    const data = await fetchPromptsList()
+    const data = await api.fetchPromptsList()
     
     // Sort logic with special rules
     prompts.value = data.sort((a, b) => {
@@ -368,7 +384,7 @@ async function selectPrompt(name) {
   publishPresence(name, 'viewing')
 
   try {
-    const data = await fetchPromptDetails(name)
+    const data = await api.fetchPromptDetails(name)
     selectedPromptData.value = data
   } catch (error) {
     console.error(error)
@@ -395,7 +411,7 @@ async function savePrompt() {
   detailError.value = '';
   
   try {
-    const data = await updatePrompt(selectedPromptName.value, editContent.value);
+    const data = await api.updatePrompt(selectedPromptName.value, editContent.value);
     
     // Update local state with the saved data
     if(selectedPromptData.value) {
@@ -414,13 +430,13 @@ async function savePrompt() {
 }
 
 async function handleSyncAll() {
-  if (!confirm("Isso irá resetar TODOS os prompts para a versão de produção. Tem certeza?")) {
+  if (!confirm("Isso irá resetar TODOS os prompts para a versão original. Tem certeza?")) {
     return
   }
 
   syncingAll.value = true
   try {
-    await syncAllPrompts()
+    await api.syncAllPrompts()
     await loadPrompts() // Resync list
     if (selectedPromptName.value) {
       await selectPrompt(selectedPromptName.value) // Resync current detail
@@ -435,13 +451,13 @@ async function handleSyncAll() {
 }
 
 async function handleSyncSingle() {
-  if (!confirm(`Deseja resetar "${selectedPromptName.value}" para a versão original de produção?`)) {
+  if (!confirm(`Deseja resetar "${selectedPromptName.value}" para a versão original?`)) {
     return
   }
 
   syncingSingle.value = true
   try {
-    await syncSinglePrompt(selectedPromptName.value)
+    await api.syncSinglePrompt(selectedPromptName.value)
     await selectPrompt(selectedPromptName.value) // Resync details
     alert("Prompt resetado com sucesso!")
   } catch (error) {
@@ -469,7 +485,7 @@ async function handleCreatePrompt() {
   creating.value = true
   createError.value = ''
   try {
-    await createPrompt(trimmedName, newPromptContent.value)
+    await api.createPrompt(trimmedName, newPromptContent.value)
     closeCreateModal()
     await loadPrompts()
     await selectPrompt(trimmedName)
@@ -488,7 +504,7 @@ async function handleDeletePrompt() {
 
   deleting.value = true
   try {
-    await deletePrompt(selectedPromptName.value)
+    await api.deletePrompt(selectedPromptName.value)
     selectedPromptName.value = null
     selectedPromptData.value = null
     await loadPrompts()

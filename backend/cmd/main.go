@@ -49,6 +49,14 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// registerSystemProxy creates a dedicated router for a subsystem proxy and mounts it onto the main mux
+// using the appropriate system authorization middleware and rate limits.
+func registerSystemProxy(mux *http.ServeMux, authMW, rateLimiter func(http.Handler) http.Handler, pathPrefix, systemRequired, envBaseURLKey, envUserKey, envPassKey string) {
+	systemMux := http.NewServeMux()
+	systemMux.HandleFunc("/", routes.GenericProxyHandler(envBaseURLKey, envUserKey, envPassKey, pathPrefix))
+	mux.Handle(pathPrefix, rateLimiter(authMW(middleware.SystemMiddleware(systemRequired)(systemMux))))
+}
+
 func main() {
 
 	redisURL := getEnv("REDIS_URL")
@@ -101,14 +109,9 @@ func main() {
 
 	mux.Handle("/bestdoctors/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bestdoctors_chat")(protectedMux))))
 
-	digesacMux := http.NewServeMux()
-	digesacMux.HandleFunc("/", routes.DigesacProxyHandler)
-	mux.Handle("/digesac/homol/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("digesac_homol")(digesacMux))))
-
-	biaMux := http.NewServeMux()
-	biaMux.HandleFunc("/", routes.BiaHomolProxyHandler)
-	// Use a backend-specific prefix to avoid clashing with existing Bia WebChat routes
-	mux.Handle("/bestdoctors/bia/homol/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bia_homol")(biaMux))))
+	// Register specific subsystem proxies
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/digesac/homol/", "digesac_homol", "DIGESAC_API_BASE", "DIGESAC_API_USER", "DIGESAC_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/bia/homol/", "bia_homol", "BIA_HOMOL_URL", "BIA_HOMOL_API_USER", "BIA_HOMOL_API_PASS")
 
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())
 

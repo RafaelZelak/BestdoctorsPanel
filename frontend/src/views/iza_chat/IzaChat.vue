@@ -86,7 +86,7 @@
 
     <!-- Input area -->
     <footer class="iza-input-area">
-      <div class="iza-input-wrapper">
+      <div class="iza-input-wrapper" @click="inputRef?.focus()">
         <textarea
           id="iza-chat-input"
           ref="inputRef"
@@ -155,8 +155,9 @@ async function scrollToBottom() {
 function autoResizeTextarea() {
   const textarea = inputRef.value
   if (!textarea) return
-  textarea.style.height = 'auto'
-  textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px'
+  // Reset height to correctly calculate scrollHeight
+  textarea.style.height = '40px'
+  textarea.style.height = Math.min(Math.max(textarea.scrollHeight, 40), 160) + 'px'
 }
 
 async function handleSend() {
@@ -544,9 +545,11 @@ onMounted(() => {
   font-size: 0.9rem;
   line-height: 1.5;
   resize: none;
-  min-height: 24px;
+  min-height: 40px;
+  padding: 9px 0;
   max-height: 160px;
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 .iza-input::placeholder {

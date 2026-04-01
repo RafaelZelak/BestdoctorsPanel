@@ -5,10 +5,8 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +17,6 @@ import (
 var (
 	responseChannels = make(map[string]chan string)
 	responseMutex    sync.RWMutex
-	jsonCodeBlockPattern = regexp.MustCompile(`(?s)` + "```" + `(?:json)?\s*([\s\S]*?)\s*` + "```" + ``)
 )
 
 const (
@@ -46,13 +43,9 @@ type izaWebhookPayload struct {
 	ConversationLifetime int    `json:"conversation_lifetime"`
 }
 
-type izaWebhookResponse struct {
-	Response string `json:"response"`
-}
-
-type izaAgentMessage struct {
-	Message    string `json:"message"`
-	FinishType string `json:"finish_type"`
+type izaWebhookReceiverPayload struct {
+	ConversationID string `json:"conversation_id"`
+	Message        string `json:"message"`
 }
 
 type chatMessageResponse struct {
@@ -64,22 +57,7 @@ func generateSessionClientName(conversationID string) string {
 	return fmt.Sprintf("TEST-%x", hash[:6])
 }
 
-
-func extractAgentMessage(rawResponse string) (string, error) {
-	trimmed := strings.TrimSpace(rawResponse)
-
-	jsonContent := trimmed
-	if matches := jsonCodeBlockPattern.FindStringSubmatch(trimmed); len(matches) >= 2 {
-		jsonContent = strings.TrimSpace(matches[1])
-	}
-
-	var agentMessage izaAgentMessage
-	if err := json.Unmarshal([]byte(jsonContent), &agentMessage); err != nil {
-		return trimmed, nil
-	}
-
-	return agentMessage.Message, nil
-}
+// Removed extractAgentMessage as it is no longer required
 
 func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -166,37 +144,22 @@ func WebhookReceiverHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bodyBytes, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "failed to read body", http.StatusInternalServerError)
-		return
-	}
-
-	var izaResponse izaWebhookResponse
-	if err := json.Unmarshal(bodyBytes, &izaResponse); err != nil {
+	var hookPayload izaWebhookReceiverPayload
+	if err := json.NewDecoder(r.Body).Decode(&hookPayload); err != nil {
 		http.Error(w, "invalid json format", http.StatusBadRequest)
 		return
 	}
 
-	// Some payloads might send generic webhook data, try to parse it specifically
-	// if we don't have response inside 'response' top-level key.
-	// We'll extract conversation_id first to route the message.
-	var genericPayload map[string]interface{}
-	json.Unmarshal(bodyBytes, &genericPayload)
-	convIDRaw, ok := genericPayload["conversation_id"]
-	if !ok || convIDRaw == "" {
+	if hookPayload.ConversationID == "" {
 		http.Error(w, "missing conversation_id", http.StatusBadRequest)
 		return
 	}
-	convID := fmt.Sprintf("%v", convIDRaw)
-	
-	agentMessage, _ := extractAgentMessage(izaResponse.Response)
 
-	// Send message to waiting client
+	// Send message directly to waiting client
 	responseMutex.Lock()
-	if ch, exists := responseChannels[convID]; exists {
-		ch <- agentMessage
-		delete(responseChannels, convID)
+	if ch, exists := responseChannels[hookPayload.ConversationID]; exists {
+		ch <- hookPayload.Message
+		delete(responseChannels, hookPayload.ConversationID)
 	}
 	responseMutex.Unlock()
 

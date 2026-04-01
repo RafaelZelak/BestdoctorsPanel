@@ -112,7 +112,10 @@ function formatSystemName(sys) {
     'bestdoctors_chat': 'Chat BestDoctors',
     'digesac_homol': 'Digesac (Homologação)',
     'bia_homol': 'Bia (Homologação)',
-    'bia_prod': 'Bia (Produção)'
+    'bia_prod': 'Bia (Produção)',
+    'iza_homol': 'Iza (Homologação)',
+    'iza_prod': 'Iza (Produção)',
+    'iza_chat': 'Iza Chat'
   }
   return names[sys] || sys
 }
@@ -161,8 +164,13 @@ function handleSystemSelection(sys) {
     router.push('/bia-homol')
   } else if (sys === 'bia_prod') {
     router.push('/bia-prod')
+  } else if (sys === 'iza_homol') {
+    router.push('/iza-homol')
+  } else if (sys === 'iza_prod') {
+    router.push('/iza-prod')
+  } else if (sys === 'iza_chat') {
+    router.push('/iza-chat')
   } else {
-    // Default fallback
     router.push('/')
   }
 }

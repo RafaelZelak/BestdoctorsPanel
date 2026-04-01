@@ -11,7 +11,6 @@
         </div>
         <div>
           <h1 class="iza-title">IZA Chat</h1>
-          <p class="iza-subtitle">Assistente Jurídico Inteligente</p>
         </div>
       </div>
       <div class="iza-header-right">
@@ -30,17 +29,7 @@
 
     <!-- Messages area -->
     <main class="iza-messages" ref="messagesContainer">
-      <!-- Empty state -->
-      <div v-if="messages.length === 0" class="iza-empty-state">
-        <div class="iza-empty-icon">
-          <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        </div>
-        <p class="iza-empty-title">Olá! Sou a IZA.</p>
-        <p class="iza-empty-desc">Sua assistente jurídica inteligente. Como posso te ajudar hoje?</p>
-      </div>
+      <!-- Empty state removed to avoid mixing with typing indicator -->
 
       <!-- Messages -->
       <template v-for="(msg, index) in messages" :key="index">
@@ -97,7 +86,7 @@
 
     <!-- Input area -->
     <footer class="iza-input-area">
-      <div class="iza-input-wrapper">
+      <div class="iza-input-wrapper" @click="inputRef?.focus()">
         <textarea
           id="iza-chat-input"
           ref="inputRef"
@@ -143,7 +132,7 @@ const router = useRouter()
 const conversationId = ref(generateUUID())
 const messages = ref([])
 const currentMessage = ref('')
-const loading = ref(false)
+const loading = ref(true)
 const errorMessage = ref('')
 const messagesContainer = ref(null)
 const inputRef = ref(null)
@@ -166,8 +155,9 @@ async function scrollToBottom() {
 function autoResizeTextarea() {
   const textarea = inputRef.value
   if (!textarea) return
-  textarea.style.height = 'auto'
-  textarea.style.height = Math.min(textarea.scrollHeight, 160) + 'px'
+  // Reset height to correctly calculate scrollHeight
+  textarea.style.height = '40px'
+  textarea.style.height = Math.min(Math.max(textarea.scrollHeight, 40), 160) + 'px'
 }
 
 async function handleSend() {
@@ -240,6 +230,17 @@ async function handleLogout() {
 
 onMounted(() => {
   inputRef.value?.focus()
+
+  // Simulate initial typing delay
+  const delay = Math.floor(Math.random() * 2000) + 2000 // Between 2 to 4 seconds
+  setTimeout(async () => {
+    messages.value.push({
+      role: 'iza',
+      text: 'Oi, User! 😊 Eu sou a Iza, sua assistente jurídica. Estou aqui pra te ouvir com atenção e entender direitinho sua situação antes de acionar um advogado(a). Pode me contar o que tá te preocupando ou o que você quer resolver?'
+    })
+    loading.value = false
+    await scrollToBottom()
+  }, delay)
 })
 </script>
 
@@ -544,9 +545,11 @@ onMounted(() => {
   font-size: 0.9rem;
   line-height: 1.5;
   resize: none;
-  min-height: 24px;
+  min-height: 40px;
+  padding: 9px 0;
   max-height: 160px;
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 .iza-input::placeholder {

@@ -31,6 +31,40 @@ const routes = [
     props: { title: 'BIA HOMOL', systemId: 'bia_homol', apiBase: '/api/proxy/bia/homol' },
     meta: { requiresAuth: true, requiresSystem: 'bia_homol' }
   },
+  {
+    path: '/bia-prod',
+    name: 'BiaProd',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'BIA PROD', systemId: 'bia_prod', apiBase: '/api/proxy/bia/prod' },
+    meta: { requiresAuth: true, requiresSystem: 'bia_prod' }
+  },
+  {
+    path: '/digesac-prod',
+    name: 'DigesacProd',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'DIGESAC PROD', systemId: 'digesac_prod', apiBase: '/api/proxy/digesac/prod' },
+    meta: { requiresAuth: true, requiresSystem: 'digesac_prod' }
+  },
+  {
+    path: '/iza-prod',
+    name: 'IzaProd',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'IZA PROD', systemId: 'iza_prod', apiBase: '/api/proxy/iza/prod' },
+    meta: { requiresAuth: true, requiresSystem: 'iza_prod' }
+  },
+  {
+    path: '/iza-homol',
+    name: 'IzaHomol',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'IZA HOMOL', systemId: 'iza_homol', apiBase: '/api/proxy/iza/homol' },
+    meta: { requiresAuth: true, requiresSystem: 'iza_homol' }
+  },
+  {
+    path: '/iza-chat',
+    name: 'IzaChat',
+    component: () => import('@/views/iza_chat/IzaChat.vue'),
+    meta: { requiresAuth: true, requiresSystem: 'iza_chat' }
+  },
   // Admin routes
   {
     path: '/admin/login',
@@ -54,7 +88,7 @@ const router = createRouter({
 // Authentication guard
 router.beforeEach(async (to, from, next) => {
   const isPublic = to.meta.public
-  
+
   if (isPublic) {
     next()
     return
@@ -74,11 +108,11 @@ router.beforeEach(async (to, from, next) => {
   // For regular routes, check regular auth
   try {
     const user = await getCurrentUser()
-    
+
     if (to.meta.requiresSystem) {
       const systems = user?.system || []
       const hasAccess = systems.includes(to.meta.requiresSystem)
-      
+
       if (!hasAccess) {
         // Redireciona o usuário para algum sistema que ele TENHA acesso
         if (systems.includes('bestdoctors_chat')) {
@@ -94,7 +128,7 @@ router.beforeEach(async (to, from, next) => {
         return
       }
     }
-    
+
     next()
   } catch (error) {
     console.error('Auth check failed:', error)

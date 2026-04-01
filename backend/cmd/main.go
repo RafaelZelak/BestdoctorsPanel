@@ -10,6 +10,7 @@ import (
 	adminMW "bestdoctors_service/admin/middleware"
 	"bestdoctors_service/middleware"
 	"bestdoctors_service/routes"
+	izaChat "bestdoctors_service/routes/iza_chat"
 
 	"golang.org/x/time/rate"
 )
@@ -104,7 +105,7 @@ func main() {
 	protectedMux.HandleFunc("/bestdoctors/report", routes.ReportHandler)
 
 	go routes.StartPresenceEviction()
-	
+
 	mux.Handle("/bestdoctors/presence/ws", middleware.RateLimitMiddleware(apiLimiter)(authMW(http.HandlerFunc(routes.PresenceWSHandler))))
 
 	mux.Handle("/bestdoctors/", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("bestdoctors_chat")(protectedMux))))
@@ -112,6 +113,16 @@ func main() {
 	// Register specific subsystem proxies
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/digesac/homol/", "digesac_homol", "DIGESAC_API_BASE", "DIGESAC_API_USER", "DIGESAC_API_PASS")
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/bia/homol/", "bia_homol", "BIA_HOMOL_URL", "BIA_HOMOL_API_USER", "BIA_HOMOL_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/bia/prod/", "bia_prod", "BIA_PROD_URL", "BIA_PROD_API_USER", "BIA_PROD_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/digesac/prod/", "digesac_prod", "DIGESAC_API_BASE", "DIGESAC_API_USER", "DIGESAC_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/iza/prod/", "iza_prod", "IZA_PROD_URL", "IZA_PROD_API_USER", "IZA_PROD_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/iza/homol/", "iza_homol", "IZA_HOMOL_URL", "IZA_HOMOL_API_USER", "IZA_HOMOL_API_PASS")
+
+	mux.Handle("/api/iza-chat/message", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("iza_chat")(http.HandlerFunc(izaChat.SendMessageHandler)))))
+	mux.Handle("/api/iza-chat/response", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("iza_chat")(http.HandlerFunc(izaChat.PollResponseHandler)))))
+	
+	// Webhook from IZA Agent (public endpoint, no auth required, the agent calls it)
+	mux.Handle("/api/iza-chat/webhook", http.HandlerFunc(izaChat.WebhookReceiverHandler))
 
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())
 

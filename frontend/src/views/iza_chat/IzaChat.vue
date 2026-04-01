@@ -136,7 +136,7 @@
 import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout } from '@/api/auth'
-import { sendIzaChatMessage } from './api.js'
+import { sendIzaChatMessage, pollIzaChatResponse } from './api.js'
 
 const router = useRouter()
 
@@ -186,12 +186,38 @@ async function handleSend() {
   await scrollToBottom()
 
   try {
-    const response = await sendIzaChatMessage({
+    // Send message to backend (returns immediately with status=processing)
+    await sendIzaChatMessage({
       message: trimmedMessage,
       conversationId: conversationId.value,
     })
 
-    messages.value.push({ role: 'iza', text: response.message })
+    // Wait for the webhook response by long polling
+    let responseMessage = ''
+    while(true) {
+      const pollRes = await pollIzaChatResponse(conversationId.value)
+      
+      if (pollRes.error === 'timeout') {
+         // Long poll timeout (120s), we could try again, or just show error.
+         errorMessage.value = 'Tempo de resposta excedido.'
+         break
+      }
+
+      if (pollRes.message !== undefined) {
+         responseMessage = pollRes.message
+         break
+      }
+      
+      if (pollRes.done === false) {
+         // Keep waiting
+         await new Promise((r) => setTimeout(r, 1000))
+         continue
+      }
+    }
+    
+    if (responseMessage) {
+      messages.value.push({ role: 'iza', text: responseMessage })
+    }
   } catch (fetchError) {
     errorMessage.value = 'Falha ao obter resposta da IZA. Tente novamente.'
     console.error(fetchError)

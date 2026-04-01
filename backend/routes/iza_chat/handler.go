@@ -10,9 +10,16 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
+)
+
+var (
+	responseChannels = make(map[string]chan string)
+	responseMutex    sync.RWMutex
+	jsonCodeBlockPattern = regexp.MustCompile(`(?s)` + "```" + `(?:json)?\s*([\s\S]*?)\s*` + "```" + ``)
 )
 
 const (
@@ -52,12 +59,11 @@ type chatMessageResponse struct {
 	Message string `json:"message"`
 }
 
-var jsonCodeBlockPattern = regexp.MustCompile("(?s)```(?:json)?\\s*([\\s\\S]*?)\\s*```")
-
 func generateSessionClientName(conversationID string) string {
 	hash := md5.Sum([]byte(conversationID))
 	return fmt.Sprintf("TEST-%x", hash[:6])
 }
+
 
 func extractAgentMessage(rawResponse string) (string, error) {
 	trimmed := strings.TrimSpace(rawResponse)
@@ -134,33 +140,106 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	upstreamRequest.Header.Set("Content-Type", "application/json")
 
 	// IZA AI responses can take several seconds to generate
-	httpClient := &http.Client{Timeout: 60 * time.Second}
+	// Fire and forget the request (with a small timeout for the initial connection)
+	go func() {
+		httpClient := &http.Client{Timeout: 10 * time.Second}
+		resp, err := httpClient.Do(upstreamRequest)
+		if err == nil {
+			resp.Body.Close()
+		}
+	}()
 
-	upstreamResponse, err := httpClient.Do(upstreamRequest)
-	if err != nil {
-		http.Error(w, "upstream request failed or timed out", http.StatusBadGateway)
+	// Create a channel to wait for the webhook response
+	ch := make(chan string, 1)
+	responseMutex.Lock()
+	responseChannels[chatRequest.ConversationID] = ch
+	responseMutex.Unlock()
+
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(map[string]string{"status": "processing"})
+}
+
+// WebhookReceiverHandler is called by the IZA agent when it finishes processing
+func WebhookReceiverHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	defer upstreamResponse.Body.Close()
 
-	responseBody, err := io.ReadAll(upstreamResponse.Body)
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "failed to read upstream response", http.StatusInternalServerError)
+		http.Error(w, "failed to read body", http.StatusInternalServerError)
 		return
 	}
 
 	var izaResponse izaWebhookResponse
-	if err := json.Unmarshal(responseBody, &izaResponse); err != nil {
-		http.Error(w, "failed to parse upstream response", http.StatusInternalServerError)
+	if err := json.Unmarshal(bodyBytes, &izaResponse); err != nil {
+		http.Error(w, "invalid json format", http.StatusBadRequest)
 		return
 	}
 
-	agentMessage, err := extractAgentMessage(izaResponse.Response)
-	if err != nil {
-		http.Error(w, "failed to extract agent message", http.StatusInternalServerError)
+	// Some payloads might send generic webhook data, try to parse it specifically
+	// if we don't have response inside 'response' top-level key.
+	// We'll extract conversation_id first to route the message.
+	var genericPayload map[string]interface{}
+	json.Unmarshal(bodyBytes, &genericPayload)
+	convIDRaw, ok := genericPayload["conversation_id"]
+	if !ok || convIDRaw == "" {
+		http.Error(w, "missing conversation_id", http.StatusBadRequest)
+		return
+	}
+	convID := fmt.Sprintf("%v", convIDRaw)
+	
+	agentMessage, _ := extractAgentMessage(izaResponse.Response)
+
+	// Send message to waiting client
+	responseMutex.Lock()
+	if ch, exists := responseChannels[convID]; exists {
+		ch <- agentMessage
+		delete(responseChannels, convID)
+	}
+	responseMutex.Unlock()
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
+// PollResponseHandler is called by the frontend to long-poll for the response
+func PollResponseHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(chatMessageResponse{Message: agentMessage})
+	convID := r.URL.Query().Get("conversation_id")
+	if convID == "" {
+		http.Error(w, "missing conversation_id", http.StatusBadRequest)
+		return
+	}
+
+	responseMutex.RLock()
+	ch, exists := responseChannels[convID]
+	responseMutex.RUnlock()
+
+	if !exists {
+		// No pending response / already answered / wrong ID
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"done": false})
+		return
+	}
+
+	// Wait for the message with a timeout of 120s (long polling)
+	select {
+	case msg := <-ch:
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(chatMessageResponse{Message: msg})
+	case <-time.After(120 * time.Second):
+		// Remove from map
+		responseMutex.Lock()
+		delete(responseChannels, convID)
+		responseMutex.Unlock()
+		
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"done": false, "error": "timeout"})
+	}
 }

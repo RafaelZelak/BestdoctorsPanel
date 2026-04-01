@@ -23,3 +23,23 @@ export async function sendIzaChatMessage({ message, conversationId }) {
 
   return res.json();
 }
+
+export async function pollIzaChatResponse(conversationId) {
+  const res = await fetch(`${API_BASE}/api/iza-chat/response?conversation_id=${encodeURIComponent(conversationId)}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+
+  if (res.status === 401) {
+    window.location.href = '/login';
+    throw new Error('Unauthorized');
+  }
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`${res.status} ${res.statusText}${detail ? ` — ${detail}` : ''}`);
+  }
+
+  return res.json();
+}

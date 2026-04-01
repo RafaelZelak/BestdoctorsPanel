@@ -119,6 +119,10 @@ func main() {
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/iza/homol/", "iza_homol", "IZA_HOMOL_URL", "IZA_HOMOL_API_USER", "IZA_HOMOL_API_PASS")
 
 	mux.Handle("/api/iza-chat/message", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("iza_chat")(http.HandlerFunc(izaChat.SendMessageHandler)))))
+	mux.Handle("/api/iza-chat/response", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("iza_chat")(http.HandlerFunc(izaChat.PollResponseHandler)))))
+	
+	// Webhook from IZA Agent (public endpoint, no auth required, the agent calls it)
+	mux.Handle("/api/iza-chat/webhook", http.HandlerFunc(izaChat.WebhookReceiverHandler))
 
 	adminHandler.InitAdminSessionStore(routes.GetSessionStore())
 

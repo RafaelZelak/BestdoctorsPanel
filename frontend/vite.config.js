@@ -36,6 +36,16 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/api/iza-chat-extractor': {
+        target: process.env.VITE_API_PROXY || 'http://backend:9002',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/api/iza-chat': {
+        target: process.env.VITE_API_PROXY || 'http://backend:9002',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   preview: {

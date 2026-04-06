@@ -45,7 +45,7 @@ export function usePromptManager(systemId, apiBase) {
   const historyList = ref([])
   const loadingHistory = ref(false)
   const historyError = ref('')
-  
+
   const selectedHistoryVersion = ref(null)
   const selectedVersionDiff = ref(null)
   const loadingDiff = ref(false)
@@ -139,7 +139,7 @@ export function usePromptManager(systemId, apiBase) {
     listError.value = ''
     try {
       const data = await api.fetchPromptsList()
-      
+
       prompts.value = data.sort((a, b) => {
         if (a.name === 'base_prompt.md') return -1;
         if (b.name === 'base_prompt.md') return 1;
@@ -158,7 +158,7 @@ export function usePromptManager(systemId, apiBase) {
   // Details
   async function selectPrompt(name) {
     if (isEditing.value) {
-      if(!confirm("Você tem modificações não salvas. Deseja sair sem salvar?")) {
+      if (!confirm("Você tem modificações não salvas. Deseja sair sem salvar?")) {
         return
       }
     }
@@ -214,12 +214,12 @@ export function usePromptManager(systemId, apiBase) {
   async function savePrompt() {
     saving.value = true;
     detailError.value = '';
-    
+
     try {
       const userData = JSON.parse(localStorage.getItem('user') || '{}');
       const fullName = userData.full_name || userData.username || 'System';
       const data = await api.updatePrompt(selectedPromptName.value, editContent.value, fullName);
-      if(selectedPromptData.value) {
+      if (selectedPromptData.value) {
         selectedPromptData.value.prompt = data.prompt || editContent.value;
       }
       isEditing.value = false;
@@ -372,13 +372,13 @@ export function usePromptManager(systemId, apiBase) {
     if (!confirm(`Deseja mesmo reverter este prompt para a versão ${versionItem.version}?`)) {
       return
     }
-    
+
     // We use the 'snapshot' from the loaded diff details, or from the version item if available
     const promptContent = selectedVersionDiff.value?.snapshot || versionItem.snapshot
 
     if (!promptContent) {
-       alert("Não foi possível carregar o conteúdo dessa versão para reverter (certifique-se de selecionar a versão primeiro).")
-       return
+      alert("Não foi possível carregar o conteúdo dessa versão para reverter (certifique-se de selecionar a versão primeiro).")
+      return
     }
 
     reverting.value = true
@@ -389,11 +389,11 @@ export function usePromptManager(systemId, apiBase) {
       if (selectedPromptData.value) {
         selectedPromptData.value.prompt = data.prompt || promptContent
       }
-      
+
       showHistoryPanel.value = false
       selectedHistoryVersion.value = null
       selectedVersionDiff.value = null
-      
+
       alert("Prompt revertido com sucesso!")
     } catch (error) {
       console.error(error)
@@ -424,7 +424,7 @@ export function usePromptManager(systemId, apiBase) {
     showCreateModal,
     creating,
     createError,
-    
+
     showHistoryPanel,
     historyList,
     loadingHistory,
@@ -434,7 +434,7 @@ export function usePromptManager(systemId, apiBase) {
     loadingDiff,
     diffError,
     reverting,
-    
+
     allPresence,
     handleLogout,
     selectPrompt,

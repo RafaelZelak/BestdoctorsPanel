@@ -69,7 +69,7 @@
         <!-- Form Step 2: System Selection -->
         <div v-else-if="step === 2" class="space-y-4">
           <h2 class="text-xl font-semibold text-white mb-4 text-center">Selecione o Sistema</h2>
-          <div class="grid gap-3">
+          <div class="grid gap-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
             <button
               v-for="sys in availableSystems"
               :key="sys"
@@ -115,7 +115,11 @@ function formatSystemName(sys) {
     'bia_prod': 'Bia (Produção)',
     'iza_homol': 'Iza (Homologação)',
     'iza_prod': 'Iza (Produção)',
-    'iza_chat': 'Iza Chat'
+    'iza_chat': 'Iza Chat',
+    'iza_extractor_homol': 'Iza Extractor (Homologação)',
+    'iza_extractor_prod': 'Iza Extractor (Produção)',
+    'iza_classifier_homol': 'Iza Classifier (Homologação)',
+    'iza_classifier_prod': 'Iza Classifier (Produção)'
   }
   return names[sys] || sys
 }
@@ -170,8 +174,32 @@ function handleSystemSelection(sys) {
     router.push('/iza-prod')
   } else if (sys === 'iza_chat') {
     router.push('/iza-chat')
+  } else if (sys === 'iza_extractor_homol') {
+    router.push('/iza-extractor-homol')
+  } else if (sys === 'iza_extractor_prod') {
+    router.push('/iza-extractor-prod')
+  } else if (sys === 'iza_classifier_homol') {
+    router.push('/iza-classifier-homol')
+  } else if (sys === 'iza_classifier_prod') {
+    router.push('/iza-classifier-prod')
   } else {
     router.push('/')
   }
 }
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280;
+}
+</style>

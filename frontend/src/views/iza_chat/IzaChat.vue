@@ -1,5 +1,6 @@
 <template>
-  <div class="iza-chat-root">
+  <div class="iza-chat-layout">
+    <div class="iza-chat-root">
     <!-- Header -->
     <header class="iza-header">
       <div class="iza-header-left">
@@ -118,16 +119,37 @@
       </div>
       <p class="iza-footer-hint">Enter para enviar · Shift+Enter para nova linha</p>
     </footer>
+    </div>
+
+    <!-- Extractor Sidebar -->
+    <aside class="iza-extractor-sidebar" :class="{ 'is-collapsed': isSidebarCollapsed }">
+      <div class="extractor-header" @click="isSidebarCollapsed = !isSidebarCollapsed">
+        <h3 v-if="!isSidebarCollapsed">Webhooks Recebidos</h3>
+        <svg v-if="isSidebarCollapsed" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        <svg v-else width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+      </div>
+      <div class="extractor-content" v-show="!isSidebarCollapsed">
+        <div v-if="extractorPayloads.length === 0" class="extractor-empty">Nenhum webhook recebido</div>
+        <div v-for="(w, i) in extractorPayloads" :key="i" class="extractor-card">
+          <div class="extractor-time">{{ new Date(w.timestamp).toLocaleTimeString() }}</div>
+          <pre class="extractor-json">{{ JSON.stringify(w.data, null, 2) }}</pre>
+        </div>
+      </div>
+    </aside>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { logout } from '@/api/auth'
-import { sendIzaChatMessage, pollIzaChatResponse } from './api.js'
+import { sendIzaChatMessage, pollIzaChatResponse, pollExtractorWebhook } from './api.js'
 
 const router = useRouter()
+
+const isSidebarCollapsed = ref(true)
+const extractorPayloads = ref([])
+let pollInterval = null
 
 const conversationId = ref(generateUUID())
 const messages = ref([])
@@ -241,17 +263,41 @@ onMounted(() => {
     loading.value = false
     await scrollToBottom()
   }, delay)
+
+  pollInterval = setInterval(async () => {
+    try {
+      const payloads = await pollExtractorWebhook()
+      if (payloads && payloads.length > 0) {
+        extractorPayloads.value.push(...payloads)
+      }
+    } catch (e) {
+      console.error('Failed to poll extractor', e)
+    }
+  }, 2000)
+})
+
+onBeforeUnmount(() => {
+  if (pollInterval) clearInterval(pollInterval)
 })
 </script>
 
 <style scoped>
-.iza-chat-root {
+.iza-chat-layout {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100vh;
+  width: 100vw;
+  overflow: hidden;
   background: #0f1117;
   color: #e2e8f0;
   font-family: 'Inter', system-ui, sans-serif;
+}
+
+.iza-chat-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 /* ─── Header ─── */
@@ -603,5 +649,85 @@ onMounted(() => {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+/* ─── Sidebar ─── */
+.iza-extractor-sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  background: #161b27;
+  border-left: 1px solid #1e2535;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.iza-extractor-sidebar.is-collapsed {
+  width: 50px;
+}
+
+.extractor-header {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  border-bottom: 1px solid #1e2535;
+  cursor: pointer;
+  background: #1a202c;
+}
+.extractor-header:hover {
+  background: #2d3748;
+}
+.is-collapsed .extractor-header {
+  justify-content: center;
+  padding: 0;
+}
+.extractor-header h3 {
+  font-size: 0.9rem;
+  margin: 0;
+  color: #f1f5f9;
+}
+
+.extractor-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.extractor-empty {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 2rem;
+}
+
+.extractor-card {
+  background: #1e2535;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.extractor-time {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+  text-align: right;
+}
+
+.extractor-json {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  margin: 0;
+  color: #a5b4fc;
+  background: #0f1117;
+  padding: 0.5rem;
+  border-radius: 4px;
+  overflow-x: auto;
 }
 </style>

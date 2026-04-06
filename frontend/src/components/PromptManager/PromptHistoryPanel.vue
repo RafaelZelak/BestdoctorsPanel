@@ -16,35 +16,43 @@
       mobileSheetHeight,
     ]"
   >
-    <!-- Drag handle (mobile only) -->
-    <div class="md:hidden flex justify-center pt-2.5 pb-1 flex-shrink-0">
-      <div class="w-10 h-1 rounded-full bg-neutral-600"></div>
-    </div>
+    <!-- Drag handle and Header Area (Touch Target) -->
+    <div 
+      class="flex-shrink-0 flex flex-col"
+      @touchstart="handleTouchStart"
+      @touchmove="handleTouchMove"
+      @touchend="handleTouchEnd"
+    >
+      <!-- Drag handle (mobile only) -->
+      <div class="md:hidden flex justify-center pt-3 pb-2 w-full cursor-grab active:cursor-grabbing">
+        <div class="w-12 h-1.5 rounded-full bg-neutral-600/80"></div>
+      </div>
 
-    <!-- Header -->
-    <div class="px-4 py-3 border-b border-neutral-700 flex-shrink-0 flex items-center justify-between">
-      <!-- Back to list button — only on mobile when a version is selected -->
-      <button
-        v-if="selectedVersion"
-        @click="$emit('clear-version')"
-        class="md:hidden flex items-center gap-1.5 text-sm text-blue-400 hover:text-blue-300 transition active:scale-95"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        Versões
-      </button>
-      <h2 v-else class="font-semibold text-neutral-200 text-sm">Histórico de Versões</h2>
+      <!-- Header Content -->
+      <div class="px-5 pb-6 pt-1 md:py-3 border-b border-neutral-700 flex items-center justify-between">
+        <!-- Back to list button — only on mobile when a version is selected -->
+        <button
+          v-if="selectedVersion"
+          @click="$emit('clear-version')"
+          class="md:hidden flex items-center gap-1.5 text-base font-medium text-blue-400 hover:text-blue-300 transition active:scale-95 px-2 py-1 -ml-2"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+          </svg>
+          Versões
+        </button>
+        <h2 v-else class="font-semibold text-neutral-200 text-base md:text-sm">Histórico de Versões</h2>
 
-      <button 
-        @click="$emit('close')" 
-        class="ml-auto text-neutral-400 hover:text-white transition p-1 rounded-lg hover:bg-neutral-700 active:scale-95"
-        title="Fechar Histórico"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+        <button 
+          @click="$emit('close')" 
+          class="ml-auto text-neutral-400 hover:text-white transition p-2 rounded-lg hover:bg-neutral-700 active:scale-95 -mr-2"
+          title="Fechar Histórico"
+        >
+          <svg class="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Version list (hidden on mobile when a version is selected — the diff is shown above) -->
@@ -122,7 +130,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   historyList: {
@@ -138,15 +146,55 @@ const props = defineProps({
   }
 })
 
-defineEmits(['close', 'select-version', 'clear-version'])
+const emit = defineEmits(['close', 'select-version', 'clear-version'])
+
+// Touch Gestures for mobile swipe up/down
+const touchStartY = ref(0)
+const touchCurrentY = ref(0)
+const isDragging = ref(false)
+
+function handleTouchStart(e) {
+  touchStartY.value = e.touches[0].clientY
+  touchCurrentY.value = e.touches[0].clientY
+  isDragging.value = true
+}
+
+function handleTouchMove(e) {
+  if (!isDragging.value) return
+  touchCurrentY.value = e.touches[0].clientY
+}
+
+function handleTouchEnd() {
+  if (!isDragging.value) return
+  isDragging.value = false
+  
+  const deltaY = touchCurrentY.value - touchStartY.value
+  const swipeThreshold = 40 // px required to trigger action
+  
+  if (Math.abs(deltaY) < swipeThreshold) return
+  
+  if (props.selectedVersion) {
+    // Current state = collapsed bar.
+    // If swipe UP (negative delta), we expand it back to the list
+    if (deltaY < 0) {
+      emit('clear-version')
+    }
+  } else {
+    // Current state = expanded list.
+    // If swipe DOWN (positive delta), we close the panel completely
+    if (deltaY > 0) {
+      emit('close')
+    }
+  }
+}
 
 // Collapsed to a slim bar when a diff is selected (mobile only).
 // On desktop the height is always auto.
 const mobileSheetHeight = computed(() => {
   if (props.selectedVersion) {
-    return 'h-[52px] md:h-auto'
+    return 'h-[88px] md:h-auto'
   }
-  return 'h-[62vh] md:h-auto'
+  return 'h-[75vh] md:h-auto'
 })
 
 const sortedHistory = computed(() => {

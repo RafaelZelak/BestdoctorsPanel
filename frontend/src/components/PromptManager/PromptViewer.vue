@@ -106,41 +106,48 @@
         </div>
       </div>
       
-      <div v-if="showHistoryPanel" class="flex-1 overflow-auto flex flex-col p-6 bg-neutral-900 border-t border-neutral-800 relative">
+      <div v-if="showHistoryPanel" class="flex-1 overflow-auto flex flex-col bg-neutral-900 border-t border-neutral-800 relative">
         <div v-if="loadingDiff" class="absolute inset-0 flex items-center justify-center bg-neutral-900/60 z-10 backdrop-blur-sm">
           <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
         </div>
         
-        <div v-if="diffError" class="p-4 mb-4 text-sm text-red-400 bg-red-900/20 border border-red-500/50 rounded-lg">
+        <div v-if="diffError" class="p-4 mb-4 text-sm text-red-400 bg-red-900/20 border border-red-500/50 rounded-lg mx-4 mt-4">
           {{ diffError }}
         </div>
         
-        <div v-else-if="!selectedVersionDiff" class="flex-1 flex flex-col items-center justify-center text-neutral-500 text-lg space-y-4">
+        <div v-else-if="!selectedVersionDiff" class="flex-1 flex flex-col items-center justify-center text-neutral-500 text-lg space-y-4 p-6 pb-20 md:pb-6">
           <svg class="w-16 h-16 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-          <p>Selecione uma versão na lateral para comparar o "Antes e Depois"</p>
+          <p class="text-center text-base">Selecione uma versão abaixo para comparar o "Antes e Depois"</p>
         </div>
         
-        <div v-else class="flex flex-col h-full gap-4 max-w-5xl mx-auto w-full">
-          <!-- Action Revert -->
-          <div class="flex justify-end shrink-0">
+        <div v-else class="flex flex-col h-full">
+          <!-- Compact revert toolbar -->
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800 bg-neutral-900/80 flex-shrink-0">
+            <span class="text-xs text-neutral-500 font-mono">
+              Comparando v{{ selectedVersionDiff?.version || selectedVersionDiff?.from_version }}
+            </span>
             <button 
               @click="$emit('revert-to-version')" 
               :disabled="reverting"
-              class="bg-green-600 hover:bg-green-500 text-white px-5 py-2.5 rounded-lg font-bold shadow-lg disabled:opacity-50 flex items-center gap-2 cursor-pointer transition"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95 disabled:opacity-50
+                     text-green-400 border border-green-600/50 hover:bg-green-600/15 hover:border-green-500"
             >
-              <svg v-if="reverting" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+              <svg v-if="reverting" class="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
-              <span>{{ reverting ? 'Restaurando...' : 'Restaurar esta versão' }}</span>
+              <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              <span>{{ reverting ? 'Restaurando...' : 'Restaurar versão' }}</span>
             </button>
           </div>
-          
-          <div class="flex-1 overflow-auto font-mono text-sm leading-relaxed p-6 bg-[#0d1117] text-[#c9d1d9] rounded-xl border border-neutral-700 shadow-inner whitespace-pre-wrap">
+
+          <!-- Diff content — pb-16 on mobile to clear the bottom sheet bar -->
+          <div class="flex-1 overflow-auto font-mono text-sm leading-relaxed p-4 md:p-6 bg-[#0d1117] text-[#c9d1d9] whitespace-pre-wrap pb-16 md:pb-6">
             <div class="break-all sm:break-normal">
               <template v-if="selectedVersionDiff.diff_from_previous && selectedVersionDiff.diff_from_previous.length > 0">
-                <template v-for="(segment, i) in selectedVersionDiff.diff_from_previous" :key="i">
+                <template v-for="(segment, segmentIndex) in selectedVersionDiff.diff_from_previous" :key="segmentIndex">
                   <span v-if="segment.op === 'equal' || !segment.op" class="text-neutral-400">{{ segment.text || segment.content }}</span>
                   <span v-else-if="segment.op === 'insert' || segment.op === 'added'" class="bg-[#2ea043]/30 text-[#fff] border-b border-[#2ea043] rounded-sm">{{ segment.text || segment.content }}</span>
                   <span v-else-if="segment.op === 'delete' || segment.op === 'removed'" class="bg-[#da3633]/30 text-red-300 line-through rounded-sm opacity-80">{{ segment.text || segment.content }}</span>

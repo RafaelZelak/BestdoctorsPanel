@@ -45,7 +45,7 @@ export async function pollIzaChatResponse(conversationId) {
 }
 
 export async function pollExtractorWebhook() {
-  const res = await fetch(`${API_BASE}/api/iza-chat-extractor/poll`, {
+  const res = await fetch(`${API_BASE}/api/iza-chat-extractor/poll?_t=${Date.now()}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

@@ -34,9 +34,9 @@
         <button
           v-if="selectedVersion"
           @click="$emit('clear-version')"
-          class="md:hidden flex items-center gap-1.5 text-base font-medium text-blue-400 hover:text-blue-300 transition active:scale-95 px-2 py-1 -ml-2"
+          class="md:hidden flex items-center gap-0.5 text-sm font-medium text-blue-400 hover:text-blue-300 transition active:scale-95 px-2 py-1 -ml-2"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
           </svg>
           Versões

@@ -333,6 +333,11 @@ export function usePromptManager(systemId, apiBase) {
     }
   }
 
+  function clearHistoryVersion() {
+    selectedHistoryVersion.value = null
+    selectedVersionDiff.value = null
+  }
+
   async function loadHistory(name) {
     loadingHistory.value = true
     historyError.value = ''
@@ -448,6 +453,7 @@ export function usePromptManager(systemId, apiBase) {
     handleDeleteFolder,
     handleAssignPromptToFolder,
     toggleHistory,
+    clearHistoryVersion,
     loadHistory,
     viewVersionDiff,
     revertToVersion

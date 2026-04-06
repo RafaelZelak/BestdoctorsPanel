@@ -78,18 +78,19 @@
         @save-prompt="savePrompt"
         @toggle-history="toggleHistory"
         @revert-to-version="revertToVersion(selectedHistoryVersion)"
-        @open-sidebar="isMobileSidebarOpen = true"
       />
 
-      <!-- History Panel -->
+      <!-- History Panel (bottom sheet on mobile, right aside on desktop) -->
       <PromptHistoryPanel
         v-if="showHistoryPanel"
         :historyList="historyList"
         :loading="loadingHistory"
         :error="historyError"
         :selectedVersion="selectedHistoryVersion"
+        :isOpen="showHistoryPanel"
         @close="toggleHistory"
         @select-version="viewVersionDiff"
+        @clear-version="clearHistoryVersion"
       />
     </div>
   </div>
@@ -174,6 +175,7 @@ const {
   handleDeleteFolder,
   handleAssignPromptToFolder,
   toggleHistory,
+  clearHistoryVersion,
   viewVersionDiff,
   revertToVersion
 } = usePromptManager(props.systemId, props.apiBase)

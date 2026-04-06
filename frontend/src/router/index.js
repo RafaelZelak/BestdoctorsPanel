@@ -13,7 +13,13 @@ const routes = [
   },
   {
     path: '/',
-    name: 'Dashboard',
+    name: 'Root',
+    component: () => import('@/views/SystemSelection.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/bestdoctors-chat',
+    name: 'BestdoctorsChat',
     component: Dashboard,
     meta: { requiresAuth: true, requiresSystem: 'bestdoctors_chat' }
   },
@@ -65,6 +71,34 @@ const routes = [
     component: () => import('@/views/iza_chat/IzaChat.vue'),
     meta: { requiresAuth: true, requiresSystem: 'iza_chat' }
   },
+  {
+    path: '/iza-extractor-homol',
+    name: 'IzaExtractorHomol',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'IZA EXTRACTOR HOMOL', systemId: 'iza_extractor_homol', apiBase: '/api/proxy/iza-extractor/homol' },
+    meta: { requiresAuth: true, requiresSystem: 'iza_extractor_homol' }
+  },
+  {
+    path: '/iza-extractor-prod',
+    name: 'IzaExtractorProd',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'IZA EXTRACTOR PROD', systemId: 'iza_extractor_prod', apiBase: '/api/proxy/iza-extractor/prod' },
+    meta: { requiresAuth: true, requiresSystem: 'iza_extractor_prod' }
+  },
+  {
+    path: '/iza-classifier-homol',
+    name: 'IzaClassifierHomol',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'IZA CLASSIFIER HOMOL', systemId: 'iza_classifier_homol', apiBase: '/api/proxy/iza-classifier/homol' },
+    meta: { requiresAuth: true, requiresSystem: 'iza_classifier_homol' }
+  },
+  {
+    path: '/iza-classifier-prod',
+    name: 'IzaClassifierProd',
+    component: () => import('@/views/PromptManager.vue'),
+    props: { title: 'IZA CLASSIFIER PROD', systemId: 'iza_classifier_prod', apiBase: '/api/proxy/iza-classifier/prod' },
+    meta: { requiresAuth: true, requiresSystem: 'iza_classifier_prod' }
+  },
   // Admin routes
   {
     path: '/admin/login',
@@ -84,6 +118,23 @@ const router = createRouter({
   history: createWebHistory(),
   routes
 })
+
+function getDefaultRouteForUser(user) {
+  const systems = user?.system || []
+  if (systems.includes('bestdoctors_chat')) return '/bestdoctors-chat'
+  if (systems.includes('bia_homol')) return '/bia-homol'
+  if (systems.includes('bia_prod')) return '/bia-prod'
+  if (systems.includes('digesac_homol')) return '/digesac-homol'
+  if (systems.includes('digesac_prod')) return '/digesac-prod'
+  if (systems.includes('iza_homol')) return '/iza-homol'
+  if (systems.includes('iza_prod')) return '/iza-prod'
+  if (systems.includes('iza_chat')) return '/iza-chat'
+  if (systems.includes('iza_extractor_homol')) return '/iza-extractor-homol'
+  if (systems.includes('iza_extractor_prod')) return '/iza-extractor-prod'
+  if (systems.includes('iza_classifier_homol')) return '/iza-classifier-homol'
+  if (systems.includes('iza_classifier_prod')) return '/iza-classifier-prod'
+  return '/login'
+}
 
 // Authentication guard
 router.beforeEach(async (to, from, next) => {
@@ -114,17 +165,7 @@ router.beforeEach(async (to, from, next) => {
       const hasAccess = systems.includes(to.meta.requiresSystem)
 
       if (!hasAccess) {
-        // Redireciona o usuário para algum sistema que ele TENHA acesso
-        if (systems.includes('bestdoctors_chat')) {
-          next('/')
-        } else if (systems.includes('bia_homol')) {
-          next('/bia-homol')
-        } else if (systems.includes('digesac_homol')) {
-          next('/digesac-homol')
-        } else {
-          // Último caso (sem sistemas), volta pro login
-          next('/login')
-        }
+        next(getDefaultRouteForUser(user))
         return
       }
     }

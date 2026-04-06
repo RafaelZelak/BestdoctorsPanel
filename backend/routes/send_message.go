@@ -51,7 +51,7 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Validação básica
 	if accountSID == "" || authToken == "" || apiURL == "" {
-		log.Println("❌ Twilio credentials missing in .env")
+		log.Println("Twilio credentials missing in .env")
 		http.Error(w, "Twilio configuration missing", http.StatusInternalServerError)
 		return
 	}
@@ -64,11 +64,11 @@ func SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	httpReq, err := http.NewRequest("POST", apiURL, strings.NewReader(form.Encode()))
 	if err != nil {
-		log.Printf("❌ Failed to create Twilio request: %v", err)
+		log.Printf("Failed to create Twilio request: %v", err)
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		return
 	}
-	
+
 	httpReq.SetBasicAuth(accountSID, authToken)
 	httpReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 

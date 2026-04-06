@@ -49,7 +49,40 @@ Abra o arquivo `frontend/src/router/index.js` e adicione a nova rota apontando p
 }
 ```
 
-**Pronto! A tela inteira de gerenciamento de prompts já vai estar funcional e com WebSocket configurado.**
-Nenhum arquivo `.vue` extra precisa ser criado.
-Nenhum arquivo `.js` na pasta `api` precisa ser criado.
-Nenhum arquivo handler novo no Backend precisa ser criado.
+## Passo 4: Registrar o Nome Amigável no Login
+Para que o novo sistema apareça com um nome bonito no "Painel de Sistemas" (ao invés do ID técnico), você precisa atualizar o arquivo `frontend/src/views/Login.vue`.
+
+Procure a função `formatSystemName` e adicione o mapeamento:
+```javascript
+function formatSystemName(sys) {
+  const names = {
+    // ... outros sistemas
+    'iza_homol': 'IZA (Homologação)'   // O ID que você criou e o Nome que o usuário vê
+  }
+}
+```
+
+E na função `handleSystemSelection`, adicione o redirecionamento:
+```javascript
+function handleSystemSelection(sys) {
+  // ... outros ifs
+  } else if (sys === 'iza_homol') {
+    router.push('/iza-homol')         // A rota que você criou no Passo 3
+  }
+}
+```
+
+## Passo 5: Mapear Variáveis no Docker Compose
+Mesmo que as variáveis estejam no `.env`, o Docker não as passa automaticamente para dentro do container do backend. Você precisa mapeá-las nos arquivos `docker-compose.yml` (local) e `docker-compose.prod.yml` (produção).
+
+Abra os arquivos e procure pela seção `backend` -> `environment`. Adicione as novas variáveis:
+
+```yaml
+      # ... outras variáveis
+      - IZA_HOMOL_API_BASE=${IZA_HOMOL_API_BASE}
+      - IZA_HOMOL_API_USER=${IZA_HOMOL_API_USER}
+      - IZA_HOMOL_API_PASS=${IZA_HOMOL_API_PASS}
+```
+
+**Pronto! Agora o fluxo completo do Backend até a UI está configurado.**
+Infelizmente esse passo ainda é manual para garantir que você tenha controle total sobre os nomes exibidos na tela de Login.

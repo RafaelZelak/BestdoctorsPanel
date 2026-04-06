@@ -114,9 +114,14 @@ func main() {
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/digesac/homol/", "digesac_homol", "DIGESAC_API_BASE", "DIGESAC_API_USER", "DIGESAC_API_PASS")
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/bia/homol/", "bia_homol", "BIA_HOMOL_URL", "BIA_HOMOL_API_USER", "BIA_HOMOL_API_PASS")
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/bia/prod/", "bia_prod", "BIA_PROD_URL", "BIA_PROD_API_USER", "BIA_PROD_API_PASS")
-	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/digesac/prod/", "digesac_prod", "DIGESAC_API_BASE", "DIGESAC_API_USER", "DIGESAC_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/digesac/prod/", "digesac_prod", "DIGESAC_PROD_URL", "DIGESAC_API_USER", "DIGESAC_API_PASS")
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/iza/prod/", "iza_prod", "IZA_PROD_URL", "IZA_PROD_API_USER", "IZA_PROD_API_PASS")
 	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/iza/homol/", "iza_homol", "IZA_HOMOL_URL", "IZA_HOMOL_API_USER", "IZA_HOMOL_API_PASS")
+
+	// Base domain proxies for shared endpoints (e.g. folders across the domain)
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/digesac/", "", "DIGESAC_PROD_URL", "DIGESAC_API_USER", "DIGESAC_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/bia/", "", "BIA_PROD_URL", "BIA_PROD_API_USER", "BIA_PROD_API_PASS")
+	registerSystemProxy(mux, authMW, middleware.RateLimitMiddleware(apiLimiter), "/api/proxy/iza/", "", "IZA_PROD_URL", "IZA_PROD_API_USER", "IZA_PROD_API_PASS")
 
 	mux.Handle("/api/iza-chat/message", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("iza_chat")(http.HandlerFunc(izaChat.SendMessageHandler)))))
 	mux.Handle("/api/iza-chat/response", middleware.RateLimitMiddleware(apiLimiter)(authMW(middleware.SystemMiddleware("iza_chat")(http.HandlerFunc(izaChat.PollResponseHandler)))))

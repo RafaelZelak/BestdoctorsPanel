@@ -1,10 +1,21 @@
 <template>
   <main class="flex-1 flex flex-col overflow-hidden bg-neutral-900">
-    <div v-if="!selectedPromptName" class="flex-1 flex flex-col items-center justify-center text-neutral-500">
+    <div v-if="!selectedPromptName" class="flex-1 flex flex-col items-center justify-center text-neutral-500 px-6">
+      <!-- Mobile: open sidebar button -->
+      <button
+        @click="$emit('open-sidebar')"
+        class="md:hidden mb-6 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-white hover:border-neutral-600 active:scale-95 transition text-sm font-medium"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        Abrir Arquivos
+      </button>
+
       <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
       </svg>
-      <p class="text-lg">Selecione um prompt na lateral para visualizar</p>
+      <p class="text-lg text-center">Selecione um prompt na lateral para visualizar</p>
     </div>
     
     <div v-else-if="loading" class="flex-1 flex items-center justify-center">
@@ -18,9 +29,20 @@
     </div>
 
     <div v-else-if="selectedPromptData" class="flex-1 flex flex-col overflow-hidden">
-      <div class="p-4 border-b border-neutral-800 bg-neutral-800/50 flex-shrink-0 flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <h3 class="font-mono text-lg font-bold text-white">{{ selectedPromptData.name }}</h3>
+      <div class="p-4 border-b border-neutral-800 bg-neutral-800/50 flex-shrink-0 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <!-- Mobile back to sidebar -->
+          <button
+            @click="$emit('open-sidebar')"
+            class="md:hidden flex-shrink-0 p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-700 active:scale-95 transition"
+            title="Arquivos"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          <h3 class="font-mono text-base md:text-lg font-bold text-white truncate">{{ selectedPromptData.name }}</h3>
           <div class="flex items-center gap-2">
             <span v-if="selectedPromptData.version" class="text-xs bg-neutral-700 text-neutral-300 px-2 py-0.5 rounded border border-neutral-600 font-mono">
               v{{ selectedPromptData.version }}
@@ -32,7 +54,7 @@
           </div>
         </div>
         
-        <div v-if="!isEditing" class="flex gap-1">
+        <div v-if="!isEditing" class="flex gap-1 flex-shrink-0">
           <!-- History Toggle -->
           <button @click="$emit('toggle-history')" 
             :class="['p-2 transition-all duration-300 rounded-lg flex items-center gap-0 hover:gap-2 group h-10', 
@@ -220,7 +242,8 @@ defineEmits([
   'save-prompt',
   'update:modelValue',
   'toggle-history',
-  'revert-to-version'
+  'revert-to-version',
+  'open-sidebar'
 ])
 
 // Computed for rendering markdown safely and reactively

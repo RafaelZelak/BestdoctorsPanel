@@ -29,11 +29,12 @@
       :showSync="showSync"
       @sync-all="handleSyncAll" 
       @logout="handleLogout" 
+      @toggle-mobile-sidebar="isMobileSidebarOpen = !isMobileSidebarOpen"
     />
 
     <!-- Main Content -->
-    <div class="flex-1 flex overflow-hidden">
-      <!-- Sidebar -->
+    <div class="flex-1 flex overflow-hidden relative">
+      <!-- Sidebar (drawer on mobile, static on desktop) -->
       <PromptSidebar 
         :prompts="prompts"
         :loading="loadingList"
@@ -43,12 +44,14 @@
         :folderError="folderError"
         :selectedPromptName="selectedPromptName"
         :allPresence="allPresence"
+        :isMobileOpen="isMobileSidebarOpen"
         @select-prompt="selectPrompt"
         @create-new="showCreateModal = true"
         @create-folder="showCreateFolderModal = true"
         @update-folder="handleUpdateFolder"
         @delete-folder="handleDeleteFolder"
         @assign-prompt="handleAssignPromptToFolder"
+        @close="isMobileSidebarOpen = false"
       />
 
       <!-- Viewer -->
@@ -75,6 +78,7 @@
         @save-prompt="savePrompt"
         @toggle-history="toggleHistory"
         @revert-to-version="revertToVersion(selectedHistoryVersion)"
+        @open-sidebar="isMobileSidebarOpen = true"
       />
 
       <!-- History Panel -->
@@ -118,6 +122,7 @@ const props = defineProps({
 })
 
 const showCreateFolderModal = ref(false)
+const isMobileSidebarOpen = ref(false)
 
 const showSync = computed(() => !props.apiBase.includes('/prod'))
 

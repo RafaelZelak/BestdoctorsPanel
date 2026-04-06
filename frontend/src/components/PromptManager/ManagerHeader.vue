@@ -1,9 +1,24 @@
 <template>
   <header class="flex-shrink-0 p-4 bg-neutral-800 border-b border-neutral-700 flex items-center justify-between">
-    <div>
-      <h1 class="text-xl font-bold tracking-wider text-blue-500">{{ title }}</h1>
-      <p class="text-xs text-neutral-400">Gerenciador de Prompts</p>
+    <div class="flex items-center gap-3">
+      <!-- Hamburger: visible only on mobile -->
+      <button
+        @click="$emit('toggle-mobile-sidebar')"
+        class="md:hidden p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-700 transition active:scale-95"
+        title="Arquivos"
+        aria-label="Abrir lista de arquivos"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <div>
+        <h1 class="text-xl font-bold tracking-wider text-blue-500">{{ title }}</h1>
+        <p class="text-xs text-neutral-400">Gerenciador de Prompts</p>
+      </div>
     </div>
+
     <div class="flex items-center gap-2">
       <button v-if="showSync" @click="$emit('sync-all')" :disabled="syncingAll" 
         class="p-2 transition-all duration-300 rounded-lg flex items-center gap-0 hover:gap-2 text-neutral-400 hover:text-yellow-500 hover:bg-yellow-500/10 group h-10"
@@ -50,5 +65,5 @@ defineProps({
   }
 })
 
-defineEmits(['sync-all', 'logout'])
+defineEmits(['sync-all', 'logout', 'toggle-mobile-sidebar'])
 </script>

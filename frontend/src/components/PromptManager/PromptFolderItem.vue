@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="dropZoneEl"
     class="flex flex-col mb-1 border border-transparent rounded-lg transition-colors duration-200"
     :class="{'bg-neutral-800 border-neutral-700': isDragOver}"
     @dragenter.prevent="handleDragEnter"
@@ -9,11 +10,14 @@
   >
     <!-- Folder Row -->
     <div
-      class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-neutral-700/50 group cursor-pointer"
+      class="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-neutral-700/50 group cursor-pointer active:scale-[0.98] transition"
       :class="{'opacity-50': isDragging}"
       draggable="true"
       @dragstart="handleDragStart"
       @dragend="handleDragEnd"
+      @touchstart.passive="handleFolderTouchStart"
+      @touchmove="handleFolderTouchMove"
+      @touchend.passive="handleFolderTouchEnd"
       @click="toggleOpen"
       @dblclick="startEditing"
     >
@@ -48,8 +52,8 @@
         </span>
       </div>
       
-      <!-- Actions -->
-      <div class="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+      <!-- Actions: always visible on touch devices, hover-only on desktop -->
+      <div class="flex items-center opacity-0 group-hover:opacity-100 touch-device:opacity-100 transition-opacity">
         <button
           @click.stop="startEditing"
           class="p-1 text-neutral-400 hover:text-blue-400 rounded"
@@ -81,13 +85,16 @@
         draggable="true"
         @dragstart="handlePromptDragStart($event, prompt)"
         @dragend="handlePromptDragEnd"
+        @touchstart.passive="handlePromptTouchStart($event, prompt)"
+        @touchmove="handlePromptTouchMove"
+        @touchend.passive="handlePromptTouchEnd"
         @click="$emit('select-prompt', prompt.name)"
         :class="[
-          'w-full text-left px-2 py-1.5 rounded-md text-xs transition font-mono flex items-center gap-2 border',
+          'w-full text-left px-2 py-1.5 rounded-md text-xs transition font-mono flex items-center gap-2 border active:scale-[0.98]',
           getPromptClass(prompt.name)
         ]"
       >
-        <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-3.5 h-3.5 opacity-70 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
         <span class="truncate flex-1">{{ prompt.name }}</span>
@@ -110,7 +117,8 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted } from 'vue'
+import { useTouchDragSource, useTouchDropTarget } from '@/composables/useTouchDrag'
 
 const props = defineProps({
   folder: {
@@ -146,6 +154,7 @@ const isOpen = ref(false)
 const isEditing = ref(false)
 const editName = ref('')
 const editInput = ref(null)
+const dropZoneEl = ref(null)
 
 const isDragOver = ref(false)
 const isDragging = ref(false)
@@ -184,7 +193,7 @@ function getPromptClass(promptName) {
   return 'text-neutral-300 hover:bg-neutral-700/60 border-transparent'
 }
 
-// -- Drag & Drop Handlers --
+// ── Desktop drag handlers ──────────────────────────────────────────────────
 
 let dragEnterCount = 0;
 
@@ -203,19 +212,15 @@ function handleDragLeave(e) {
 function handleDrop(e) {
   dragEnterCount = 0
   isDragOver.value = false
-  const type = e.dataTransfer.getData('type') // "folder" or "prompt"
+  const type = e.dataTransfer.getData('type')
   
   if (type === 'prompt') {
     const promptName = e.dataTransfer.getData('promptName')
     const folderId = props.folder.id || props.folder.ID
     if (promptName) {
-      emit('drop-into-folder', {
-        folderId: folderId,
-        promptName
-      })
+      emit('drop-into-folder', { folderId, promptName })
     }
   } else if (type === 'folder') {
-    // If we're dropping a folder on another folder, reorder them
     const draggedFolderId = e.dataTransfer.getData('folderId')
     const currentFolderId = props.folder.id || props.folder.ID
     if (draggedFolderId && parseInt(draggedFolderId) !== currentFolderId) {
@@ -240,7 +245,6 @@ function handleDragEnd(e) {
   emit('drag-folder-end')
 }
 
-// Handle dragging a prompt from within this folder
 function handlePromptDragStart(e, prompt) {
   e.dataTransfer.setData('type', 'prompt')
   e.dataTransfer.setData('promptName', prompt.name)
@@ -250,4 +254,66 @@ function handlePromptDragStart(e, prompt) {
 function handlePromptDragEnd(e) {
   emit('drag-prompt-end')
 }
+
+// ── Touch drag: folder row ─────────────────────────────────────────────────
+
+const folderTouchSource = useTouchDragSource(
+  () => { isDragging.value = true },
+  () => { isDragging.value = false }
+)
+
+function handleFolderTouchStart(event) {
+  const folderId = props.folder.id || props.folder.ID
+  folderTouchSource.handleTouchStart(event, event.currentTarget, 'folder', { folderId })
+}
+
+function handleFolderTouchMove(event) {
+  folderTouchSource.handleTouchMove(event)
+}
+
+function handleFolderTouchEnd(event) {
+  folderTouchSource.handleTouchEnd(event)
+}
+
+// ── Touch drag: prompts inside folder ─────────────────────────────────────
+
+const promptTouchSource = useTouchDragSource()
+
+function handlePromptTouchStart(event, prompt) {
+  promptTouchSource.handleTouchStart(event, event.currentTarget, 'prompt', { promptName: prompt.name })
+}
+
+function handlePromptTouchMove(event) {
+  promptTouchSource.handleTouchMove(event)
+}
+
+function handlePromptTouchEnd(event) {
+  promptTouchSource.handleTouchEnd(event)
+}
+
+// ── Touch drop zone: folder receives touch-drops ───────────────────────────
+
+const { bindDropZone, unbindDropZone } = useTouchDropTarget(
+  (detail) => {
+    const currentFolderId = props.folder.id || props.folder.ID
+    if (detail.type === 'prompt' && detail.promptName) {
+      emit('drop-into-folder', { folderId: currentFolderId, promptName: detail.promptName })
+    } else if (detail.type === 'folder' && detail.folderId) {
+      const draggedId = parseInt(detail.folderId)
+      if (draggedId !== currentFolderId) {
+        emit('drop-into-folder', { targetFolderId: currentFolderId, draggedFolderId: draggedId })
+      }
+    }
+  },
+  () => { isDragOver.value = true },
+  () => { isDragOver.value = false }
+)
+
+onMounted(() => {
+  if (dropZoneEl.value) bindDropZone(dropZoneEl.value)
+})
+
+onUnmounted(() => {
+  if (dropZoneEl.value) unbindDropZone(dropZoneEl.value)
+})
 </script>

@@ -258,6 +258,7 @@ onMounted(() => {
   setTimeout(async () => {
     messages.value.push({
       role: 'iza',
+      text: 'Oi, User! 😊 Eu sou a Iza, sua assistente jurídica. Estou aqui pra te ouvir com atenção e entender direitinho sua situação antes de acionar um advogado(a). Pode me contar o que tá te preocupando ou o que você quer resolver?'
     })
     loading.value = false
     await scrollToBottom()
